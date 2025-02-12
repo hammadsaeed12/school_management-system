@@ -25,7 +25,7 @@ export default function AdminPage() {
           <div className='w-full lg:w-2/3 h-[450px]'><AttenndanceChart/></div>
         </div>
         {/* BOTTOM CHARTS */}
-        <div></div>
+        <div className='w-full h-[500px]'></div>
       </div>
       {/* RIGHT */}
       <div className='w-full lg:w-1/3'>R</div>
