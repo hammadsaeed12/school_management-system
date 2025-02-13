@@ -921,14 +921,14 @@ export const calendarEvents = [
   {
     title: "Math",
     allDay: false,
-    start: new Date(2025, 1, 13, 8, 0),
-    end: new Date(2025, 1, 13, 8, 45),
+    start: new Date(2025, 1, 10, 8, 0),
+    end: new Date(2025, 1, 10, 8, 45),
   },
   {
     title: "English",
     allDay: false,
-    start: new Date(2025, 1, 13, 9, 0),
-    end: new Date(2025, 1, 13, 9, 45),
+    start: new Date(2025, 1, 14, 9, 0),
+    end: new Date(2025, 1, 14, 9, 45),
   },
   {
     title: "Biology",
@@ -957,20 +957,20 @@ export const calendarEvents = [
   {
     title: "English",
     allDay: false,
-    start: new Date(2025, 1, 11, 9, 0),
-    end: new Date(2025, 1, 11, 9, 45),
+    start: new Date(2025, 1, 10, 9, 0),
+    end: new Date(2025, 1, 10, 9, 45),
   },
   {
     title: "Biology",
     allDay: false,
-    start: new Date(2025, 1, 12, 10, 0),
-    end: new Date(2025, 1, 12, 10, 45),
+    start: new Date(2025, 1, 11, 10, 0),
+    end: new Date(2025, 1, 11, 10, 45),
   },
   {
     title: "Physics",
     allDay: false,
-    start: new Date(2025, 1, 12, 11, 0),
-    end: new Date(2025, 1, 12, 11, 45),
+    start: new Date(2025, 1, 11, 11, 0),
+    end: new Date(2025, 1, 11, 11, 45),
   },
 
   {
@@ -982,8 +982,8 @@ export const calendarEvents = [
   {
     title: "Math",
     allDay: false,
-    start: new Date(2025, 1, 14, 8, 0),
-    end: new Date(2025, 1, 14, 8, 45),
+    start: new Date(2025, 1, 13, 8, 0),
+    end: new Date(2025, 1, 13, 8, 45),
   },
   {
     title: "Biology",
@@ -1001,8 +1001,8 @@ export const calendarEvents = [
   {
     title: "History",
     allDay: false,
-    start: new Date(2025, 1, 14, 14, 0),
-    end: new Date(2025, 1, 14, 14, 45),
+    start: new Date(2025, 1, 10, 14, 0),
+    end: new Date(2025, 1, 10, 14, 45),
   },
   {
     title: "English",
@@ -1038,8 +1038,8 @@ export const calendarEvents = [
   {
     title: "English",
     allDay: false,
-    start: new Date(2025, 1, 11, 9, 0),
-    end: new Date(2025, 1, 11, 9, 45),
+    start: new Date(2025, 1, 13, 9, 0),
+    end: new Date(2025, 1, 13, 9, 45),
   },
 
   {
@@ -1051,8 +1051,8 @@ export const calendarEvents = [
   {
     title: "Chemistry",
     allDay: false,
-    start: new Date(2025, 1, 12, 13, 0),
-    end: new Date(2025, 1, 12, 13, 45),
+    start: new Date(2025, 1, 13, 13, 0),
+    end: new Date(2025, 1, 13, 13, 45),
   },
   {
     title: "History",
