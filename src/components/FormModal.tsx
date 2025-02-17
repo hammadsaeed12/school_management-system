@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 
 const FormModal = ({
@@ -33,11 +33,21 @@ const FormModal = ({
       : type === "update"
       ? "bg-lamaSky"
       : "bg-lamaPurple";
+  const [open, setOpen] = useState(false);
   return (
     <>
-      <button className= {`${size} flex items-center justify-center rounded-full ${bgColor}`} >
-        <Image src={`/${type}.png`} alt="" width={16} height={16}/>
+      <button
+        className={`${size} flex items-center justify-center rounded-full ${bgColor}`}
+        onClick={() => setOpen(true)}
+      >
+        <Image src={`/${type}.png`} alt="" width={16} height={16} />
       </button>
+      {open && (
+        <div className="w-screen h-screen absolute left-0 top-0 bg-black bg-opacity-60 z-50 flex items-center justify-center">
+          <div className="bg-white p-4 rounded-md ">Hello</div>
+          <div className=""></div>
+        </div>
+      )}
     </>
   );
 };
