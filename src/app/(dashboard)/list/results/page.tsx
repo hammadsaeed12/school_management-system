@@ -3,8 +3,7 @@ import React from "react";
 import Image from "next/image";
 import Pagination from "@/components/Pagination";
 import Table from "@/components/Table";
-import Link from "next/link";
-import {assignmentsData, examsData, lessonsData,resultsData,role} from "@/lib/data";
+import {resultsData,role} from "@/lib/data";
 import FormModal from "@/components/FormModal";
 
 type result = {

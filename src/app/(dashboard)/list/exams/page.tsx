@@ -4,7 +4,7 @@ import Image from "next/image";
 import Pagination from "@/components/Pagination";
 import Table from "@/components/Table";
 import Link from "next/link";
-import {examsData, lessonsData,role} from "@/lib/data";
+import {examsData,role} from "@/lib/data";
 import FormModal from "@/components/FormModal";
 
 type exams = {

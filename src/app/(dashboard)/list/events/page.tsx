@@ -3,27 +3,24 @@ import React from "react";
 import Image from "next/image";
 import Pagination from "@/components/Pagination";
 import Table from "@/components/Table";
-import Link from "next/link";
-import {assignmentsData, eventsData, examsData, lessonsData,resultsData,role} from "@/lib/data";
+import { eventsData, role } from "@/lib/data";
 import FormModal from "@/components/FormModal";
 
 type events = {
   id: number;
-  title:string;
-  startTime:string
-  class:string;
-  endTime:string;
-  date:string;
-  
-  
+  title: string;
+  startTime: string;
+  class: string;
+  endTime: string;
+  date: string;
 };
 
 const columns = [
   {
     header: "Title",
     accessor: "title",
-  }, 
- 
+  },
+
   {
     header: "Class",
     accessor: "class",
@@ -44,7 +41,7 @@ const columns = [
     accessor: "end time",
     className: "hidden sm:table-cell",
   },
-  
+
   {
     header: "Action",
     accessor: "action",
@@ -53,16 +50,18 @@ const columns = [
 
 const EventsListPage = () => {
   const renderRow = (item: events) => (
-    <tr key={item.id} className="border-b border-gray-200 even:bg-slate-50 text-sm hover:bg-lamaPurpleLight">
+    <tr
+      key={item.id}
+      className="border-b border-gray-200 even:bg-slate-50 text-sm hover:bg-lamaPurpleLight"
+    >
       <td className="flex items-center gap-4 p-4">{item.title}</td>
       <td className="hidden sm:table-cell">{item.class}</td>
       <td className="hidden md:table-cell">{item.date}</td>
       <td className="hidden md:table-cell">{item.startTime}</td>
       <td className="hidden md:table-cell">{item.endTime}</td>
-      
-      
+
       <td>
-       <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
           {/* <Link href={`/list/teachers/${item.id}`}>
           <button className="w-7 h-7 flex items-center justify-center rounded-full bg-lamaSky">
             <Image src="/view.png" alt="" width={16} height={16}/>
@@ -94,11 +93,11 @@ const EventsListPage = () => {
               <Image src="/sort.png" alt="" width={14} height={14} />
             </button>
             {role === "admin" && (
-            // <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
-            //   <Image src="/plus.png" alt="" width={14} height={14} />
-            // </button>
-            <FormModal table={"event"} type={"create"}/>
-          )}
+              // <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
+              //   <Image src="/plus.png" alt="" width={14} height={14} />
+              // </button>
+              <FormModal table={"event"} type={"create"} />
+            )}
           </div>
         </div>
       </div>

@@ -12,16 +12,16 @@ const TeacherForm = dynamic(()=>import("./Forms/TeacherForm"),{
 const StudentForm = dynamic(()=>import("./Forms/StudentForm"),{
   loading:() => <h1>Loading...</h1>,
 })
-const ParentForm = dynamic(() => import("./Forms/ParentForm"));
-const ClassForm = dynamic(() => import("./Forms/ClassForm"));
-const SubjectForm = dynamic(() => import("./Forms/SubjectForm"));
-const LessonForm = dynamic(() => import("./Forms/LessonForm"));
-const ExamForm = dynamic(() => import("./Forms/ExamForm"));
-const AssignmentForm = dynamic(() => import("./Forms/AssignmentForm"));
-const ResultForm = dynamic(() => import("./Forms/ResultForm"));
-const AttendanceForm = dynamic(() => import("./Forms/AttendanceForm"));
-const EventForm = dynamic(() => import("./Forms/EventForm"));
-const AnnouncementForm = dynamic(() => import("./Forms/AnnouncementForm"));
+// const ParentForm = dynamic(() => import("./Forms/ParentForm"));
+// const ClassForm = dynamic(() => import("./Forms/ClassForm"));
+// const SubjectForm = dynamic(() => import("./Forms/SubjectForm"));
+// const LessonForm = dynamic(() => import("./Forms/LessonForm"));
+// const ExamForm = dynamic(() => import("./Forms/ExamForm"));
+// const AssignmentForm = dynamic(() => import("./Forms/AssignmentForm"));
+// const ResultForm = dynamic(() => import("./Forms/ResultForm"));
+// const AttendanceForm = dynamic(() => import("./Forms/AttendanceForm"));
+// const EventForm = dynamic(() => import("./Forms/EventForm"));
+// const AnnouncementForm = dynamic(() => import("./Forms/AnnouncementForm"));
 
 
 const forms :{
