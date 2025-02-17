@@ -4,6 +4,7 @@ import BigCalendar from "@/components/BigCalendar";
 import Announcement from "@/components/Announcement";
 import Link from "next/link";
 import Performance from "@/components/Performance";
+import FormModal from "@/components/FormModal";
 
 const SingleTeacherPage = () => {
   return (
@@ -24,7 +25,27 @@ const SingleTeacherPage = () => {
               />
             </div>
             <div className="w-2/3 flex flex-col justify-between gap-4">
+            <div className="flex items-center gap-4">
               <h1 className="text-xl font-semibold">Leonard Snyder</h1>
+              <FormModal
+                table={"teacher"}
+                type={"update"}
+                data={{
+                  id: 1,
+                  username: "michealwilliams",
+                  email: "michealwilliams@gmail.com",
+                  password: "password",
+                  firstName: "Micheal",
+                  LastName: "williams",
+                  phone: "030012345",
+                  address: "12345 Main St,Anyton,USA",
+                  bloodType: "A+",
+                  dateOfBirth: "2000-01-01",
+                  gender: "male",
+                  img: "https://images.pexels.com/photos/2182970/pexels-photo-2182970.jpeg?auto=compress&cs=tinysrgb&w=1200",
+                }}
+              />
+              </div>
               <p className="text-sm text-gray-500">
                 Lorem ipsum dolor sit amet consectetur adipisicing elit..
               </p>
