@@ -29,7 +29,7 @@ const ClassForm = ({
   data,
 }: {
   type: "create" | "update";
-  data: Partial<Inputs>;
+  data: any;
 }) => {
   const {
     register,
@@ -45,7 +45,7 @@ const ClassForm = ({
 
   return (
     <form className="flex flex-col gap-8" onSubmit={onSubmit}>
-      <h1 className="text-xl font-semibold">Create a new Class</h1>
+      <h1 className="text-xl font-semibold">Create a new teacher</h1>
       <span className="text-xs text-gray-400 font-medium">
         Authentication Information
       </span>
@@ -124,7 +124,7 @@ const ClassForm = ({
           name="birthday"
           type="date"
           error={errors.birthday}
-          defaultValue={data?.birthday ? data.birthday.toISOString().split('T')[0] : undefined}
+          defaultValue={data?.birthday}
         />
       <div className="flex flex-col gap-2 w-full md:w-1/4">
         <label className="text-xs text-gray-500">Gender</label>

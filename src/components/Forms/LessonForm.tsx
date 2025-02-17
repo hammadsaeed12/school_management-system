@@ -29,7 +29,7 @@ const LessonForm = ({
   data,
 }: {
   type: "create" | "update";
-  data: Partial<Inputs>;
+  data: any;
 }) => {
   const {
     register,
@@ -124,7 +124,8 @@ const LessonForm = ({
           name="birthday"
           type="date"
           error={errors.birthday}
-          defaultValue={data?.birthday ? data.birthday.toISOString().split('T')[0] : undefined}        />
+          defaultValue={data?.birthday}
+        />
       <div className="flex flex-col gap-2 w-full md:w-1/4">
         <label className="text-xs text-gray-500">Gender</label>
         <select
