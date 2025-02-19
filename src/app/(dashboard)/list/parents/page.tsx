@@ -3,7 +3,6 @@ import React from "react";
 import Image from "next/image";
 import Pagination from "@/components/Pagination";
 import Table from "@/components/Table";
-import Link from "next/link";
 import { parentsData, role } from "@/lib/data";
 import FormModal from "@/components/FormModal";
 
