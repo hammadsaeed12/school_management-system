@@ -3,99 +3,101 @@ import React from "react";
 import Image from "next/image";
 import Pagination from "@/components/Pagination";
 import Table from "@/components/Table";
-import { eventsData, role } from "@/lib/data";
 import FormModal from "@/components/FormModal";
 import { Class, Event, Prisma } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { ITEM_PER_PAGE } from "@/lib/setting";
+import { getRole } from "@/lib/utils";
+import { currentUser } from "@clerk/nextjs/server";
 
 type EventList = Event & { class: Class };
 
-const columns = [
-  {
-    header: "Title",
-    accessor: "title",
-  },
-
-  {
-    header: "Class",
-    accessor: "class",
-    className: "hidden md:table-cell",
-  },
-  {
-    header: "Date",
-    accessor: "date",
-    className: "hidden md:table-cell",
-  },
-  {
-    header: "Start Time",
-    accessor: "start time",
-    className: "hidden md:table-cell",
-  },
-  {
-    header: "End Time",
-    accessor: "end time",
-    className: "hidden sm:table-cell",
-  },
-
-  {
-    header: "Action",
-    accessor: "action",
-  },
-];
-
-const renderRow = (item: EventList) => (
-  <tr
-    key={item.id}
-    className="border-b border-gray-200 even:bg-slate-50 text-sm hover:bg-lamaPurpleLight"
-  >
-    <td className="flex items-center gap-4 p-4">{item.title}</td>
-    <td className="hidden sm:table-cell">{item.class.name}</td>
-    <td className="hidden md:table-cell">
-    {new Intl.DateTimeFormat("en-US").format(item.startTime)}
-    </td>
-    <td className="hidden md:table-cell">
-    {item.startTime.toLocaleTimeString("en-US", {
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: false,
-        })}
-    </td>
-    <td className="hidden md:table-cell">
-    {item.endTime.toLocaleTimeString("en-US", {
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: false,
-        })}
-    </td>
-
-    <td>
-      <div className="flex items-center gap-2">
-        {/* <Link href={`/list/teachers/${item.id}`}>
-        <button className="w-7 h-7 flex items-center justify-center rounded-full bg-lamaSky">
-          <Image src="/view.png" alt="" width={16} height={16}/>
-        </button>
-        </Link> */}
-        {role === "admin" && (
-          <>
-            <FormModal table={"event"} type="update" data={item} />
-            <FormModal table={"event"} type={"delete"} id={item.id} />
-          </>
-        )}
-      </div>
-    </td>
-  </tr>
-);
 const EventsListPage = async ({
   searchParams,
 }: {
   searchParams: { [key: string]: string | undefined };
 }) => {
+  const role = await getRole();
   const { page, ...queryParams } = searchParams;
   const p = page ? parseInt(page) : 1;
   // URL  PARAMS CONDITION
-
+  
   const query: Prisma.EventWhereInput = {};
+  const columns = [
+    {
+      header: "Title",
+      accessor: "title",
+    },
+  
+    {
+      header: "Class",
+      accessor: "class",
+      className: "hidden md:table-cell",
+    },
+    {
+      header: "Date",
+      accessor: "date",
+      className: "hidden md:table-cell",
+    },
+    {
+      header: "Start Time",
+      accessor: "start time",
+      className: "hidden md:table-cell",
+    },
+    {
+      header: "End Time",
+      accessor: "end time",
+      className: "hidden sm:table-cell",
+    },
+  
+    ...(role ==="admin"?[{
+      header: "Action",
+      accessor: "action",
+    }]:[])
+  ];
+  
+  const renderRow = (item: EventList) => (
+    <tr
+      key={item.id}
+      className="border-b border-gray-200 even:bg-slate-50 text-sm hover:bg-lamaPurpleLight"
+    >
+      <td className="flex items-center gap-4 p-4">{item.title}</td>
+      <td className="hidden sm:table-cell">{item.class?.name || "-"}</td>
+      <td className="hidden md:table-cell">
+      {new Intl.DateTimeFormat("en-US").format(item.startTime)}
+      </td>
+      <td className="hidden md:table-cell">
+      {item.startTime.toLocaleTimeString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false,
+          })}
+      </td>
+      <td className="hidden md:table-cell">
+      {item.endTime.toLocaleTimeString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false,
+          })}
+      </td>
+  
+      <td>
+        <div className="flex items-center gap-2">
+          {/* <Link href={`/list/teachers/${item.id}`}>
+          <button className="w-7 h-7 flex items-center justify-center rounded-full bg-lamaSky">
+            <Image src="/view.png" alt="" width={16} height={16}/>
+          </button>
+          </Link> */}
+          {role === "admin" && (
+            <>
+              <FormModal table={"event"} type="update" data={item} />
+              <FormModal table={"event"} type={"delete"} id={item.id} />
+            </>
+          )}
+        </div>
+      </td>
+    </tr>
+  );
 
   if (queryParams) {
     for (const [key, value] of Object.entries(queryParams)) {
@@ -110,6 +112,20 @@ const EventsListPage = async ({
       }
     }
   }
+
+  //ROLE CONDITIONS
+   
+ const user = await currentUser();
+ const roleConditions = {
+  teacher:{ lessons:{ some: {teacherId: user?.id}}},
+  student:{ students: { some: {id: user?.id}}},
+  parent: { students: { some: {parentId: user?.id}}},
+ };
+
+ query.OR = [{ classId:null},{
+  class: roleConditions[role as keyof typeof roleConditions] || {}
+ }];
+
   const [data, count] = await prisma.$transaction([
     prisma.event.findMany({
       where: query,

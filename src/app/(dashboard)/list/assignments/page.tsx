@@ -3,11 +3,11 @@ import React from "react";
 import Image from "next/image";
 import Pagination from "@/components/Pagination";
 import Table from "@/components/Table";
-import { assignmentsData, role } from "@/lib/data";
 import FormModal from "@/components/FormModal";
 import { Assignment, Class, Prisma, Subject, Teacher } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { ITEM_PER_PAGE } from "@/lib/setting";
+import {getCurrentUserId, getRole } from "@/lib/utils";
 
 type AssignmentList = Assignment & {
   lesson: {
@@ -17,76 +17,80 @@ type AssignmentList = Assignment & {
   };
 };
 
-const columns = [
-  {
-    header: "Subject",
-    accessor: "classes",
-  },
-
-  {
-    header: "Class",
-    accessor: "class",
-    className: "hidden sm:table-cell",
-  },
-
-  {
-    header: "Teacher",
-    accessor: "teacher",
-    className: "hidden md:table-cell",
-  },
-  {
-    header: "Due Date",
-    accessor: "dueDate",
-    className: "hidden md:table-cell",
-  },
-
-  {
-    header: "Action",
-    accessor: "action",
-  },
-];
-
-const renderRow = (item: AssignmentList) => (
-  <tr
-    key={item.id}
-    className="border-b border-gray-200 even:bg-slate-50 text-sm hover:bg-lamaPurpleLight"
-  >
-    <td className="flex items-center gap-4 p-4">{item.lesson.subject.name}</td>
-    <td className="hidden sm:table-cell">{item.lesson.class.name}</td>
-    <td className="hidden md:table-cell">
-      {item.lesson.teacher.name + "" + item.lesson.teacher.surname}
-    </td>
-    <td className="hidden md:table-cell">
-      {new Intl.DateTimeFormat("en-US").format(item.dueDate)}
-    </td>
-
-    <td>
-      <div className="flex items-center gap-2">
-        {/* <Link href={`/list/teachers/${item.id}`}>
-        <button className="w-7 h-7 flex items-center justify-center rounded-full bg-lamaSky">
-          <Image src="/view.png" alt="" width={16} height={16}/>
-        </button>
-        </Link> */}
-        {role === "admin" && (
-          <>
-            <FormModal table={"assignment"} type="update" data={item} />
-            <FormModal table={"assignment"} type={"delete"} id={item.id} />
-          </>
-        )}
-      </div>
-    </td>
-  </tr>
-);
 const AssingmentListPage = async ({
   searchParams,
 }: {
   searchParams: { [key: string]: string | undefined };
 }) => {
+  const userId = await getCurrentUserId();
+  const role = await getRole();
   const { page, ...queryParams } = searchParams;
   const p = page ? parseInt(page) : 1;
   // URL  PARAMS CONDITION
-
   const query: Prisma.AssignmentWhereInput = {};
+
+  const columns = [
+    {
+      header: "Subject",
+      accessor: "classes",
+    },
+
+    {
+      header: "Class",
+      accessor: "class",
+      className: "hidden sm:table-cell",
+    },
+
+    {
+      header: "Teacher",
+      accessor: "teacher",
+      className: "hidden md:table-cell",
+    },
+    {
+      header: "Due Date",
+      accessor: "dueDate",
+      className: "hidden md:table-cell",
+    },
+
+  ...(role === "admin" || role ==="teacher" ? [ {
+      header: "Action",
+      accessor: "action",
+    }]:[])
+  ];
+
+  const renderRow = (item: AssignmentList) => (
+    <tr
+      key={item.id}
+      className="border-b border-gray-200 even:bg-slate-50 text-sm hover:bg-lamaPurpleLight"
+    >
+      <td className="flex items-center gap-4 p-4">
+        {item.lesson.subject.name}
+      </td>
+      <td className="hidden sm:table-cell">{item.lesson.class.name}</td>
+      <td className="hidden md:table-cell">
+        {item.lesson.teacher.name + "" + item.lesson.teacher.surname}
+      </td>
+      <td className="hidden md:table-cell">
+        {new Intl.DateTimeFormat("en-US").format(item.dueDate)}
+      </td>
+
+      <td>
+        <div className="flex items-center gap-2">
+          {/* <Link href={`/list/teachers/${item.id}`}>
+          <button className="w-7 h-7 flex items-center justify-center rounded-full bg-lamaSky">
+            <Image src="/view.png" alt="" width={16} height={16}/>
+          </button>
+          </Link> */}
+          {(role === "admin" || role === "teacher") && (
+            <>
+              <FormModal table="assignment" type="update" data={item} />
+              <FormModal table="assignment" type="delete" id={item.id} />
+            </>
+          )}
+        </div>
+      </td>
+    </tr>
+  );
 
   if (queryParams) {
     for (const [key, value] of Object.entries(queryParams)) {
@@ -109,12 +113,70 @@ const AssingmentListPage = async ({
               },
             };
             break;
-            default:
-              break;
+          default:
+            break;
         }
       }
     }
   }
+
+  //ROLE CONDITIONS
+  switch (role) {
+    case "admin":
+      break;
+    case "teacher":
+      if (query.lesson) {
+        query.lesson.teacherId = userId!;
+      } else {
+        query.lesson = { teacherId: userId! };
+      }
+    case "student":
+      if (query.lesson) {
+        query.lesson.class = {
+          students: {
+            some: {
+              id: userId!,
+            },
+          },
+        };
+      } else {
+        query.lesson = {
+          class: {
+            students: {
+              some: {
+                id: userId!,
+              },
+            },
+          },
+        };
+      }
+      break;
+    case "parent":
+      if (query.lesson) {
+        query.lesson.class = {
+          students: {
+            some: {
+              parentId: userId!,
+            },
+          },
+        };
+      } else {
+        query.lesson = {
+          class: {
+            students: {
+              some: {
+                parentId: userId!,
+              },
+            },
+          },
+        };
+      }
+      break;
+
+    default:
+      break;
+  }
+
   const [data, count] = await prisma.$transaction([
     prisma.assignment.findMany({
       where: query,
@@ -149,7 +211,7 @@ const AssingmentListPage = async ({
             <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
               <Image src="/sort.png" alt="" width={14} height={14} />
             </button>
-            {role === "admin" && (
+            {role === "teacher" && (
               // <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
               //   <Image src="/plus.png" alt="" width={14} height={14} />
               // </button>
