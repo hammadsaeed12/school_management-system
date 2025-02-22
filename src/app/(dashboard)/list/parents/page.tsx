@@ -9,9 +9,9 @@ import prisma from "@/lib/prisma";
 import { ITEM_PER_PAGE } from "@/lib/setting";
 import { getRole } from "@/lib/utils";
 
-type ParentLIst = Parent &{ students:Student[]}
+type ParentLIst = Parent & { students: Student[] };
 
-const ParentListPage =  async ({
+const ParentListPage = async ({
   searchParams,
 }: {
   searchParams: { [key: string]: string | undefined };
@@ -20,9 +20,9 @@ const ParentListPage =  async ({
   const { page, ...queryParams } = searchParams;
   const p = page ? parseInt(page) : 1;
   // URL  PARAMS CONDITION
-  
+
   const query: Prisma.ParentWhereInput = {};
-  
+
   const columns = [
     {
       header: "info",
@@ -33,7 +33,7 @@ const ParentListPage =  async ({
       accessor: "students",
       className: "hidden md:table-cell",
     },
-  
+
     {
       header: "Phone",
       accessor: "phone",
@@ -53,7 +53,7 @@ const ParentListPage =  async ({
         ]
       : []),
   ];
-  
+
   const renderRow = (item: ParentLIst) => (
     <tr
       key={item.id}
@@ -65,7 +65,9 @@ const ParentListPage =  async ({
           <p className="text-xs text-gray-500">{item?.email}</p>
         </div>
       </td>
-      <td className="hidden md:table-cell">{item.students.map(student=>student.name).join(",")}</td>
+      <td className="hidden md:table-cell">
+        {item.students.map((student) => student.name).join(",")}
+      </td>
       <td className="hidden md:table-cell">{item.phone}</td>
       <td className="hidden lg:table-cell">{item.address}</td>
       <td>
@@ -89,11 +91,11 @@ const ParentListPage =  async ({
     for (const [key, value] of Object.entries(queryParams)) {
       if (value !== undefined) {
         switch (key) {
-            case "search":
+          case "search":
             query.name = { contains: value, mode: "insensitive" };
             break;
-            default:
-              break;
+          default:
+            break;
         }
       }
     }
@@ -124,12 +126,7 @@ const ParentListPage =  async ({
             <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
               <Image src="/sort.png" alt="" width={14} height={14} />
             </button>
-            {role === "admin" && (
-              // <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
-              //   <Image src="/plus.png" alt="" width={14} height={14} />
-              // </button>
-              <FormModal table={"parent"} type={"create"} />
-            )}
+            {role === "admin" && <FormModal table="parent" type="create" />}
           </div>
         </div>
       </div>
