@@ -1,7 +1,9 @@
 "use client";
+
 import {
   BarChart,
   Bar,
+  Rectangle,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -9,7 +11,6 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import React from "react";
 
 const AttenndanceChart = ({
   data,
@@ -41,7 +42,6 @@ const AttenndanceChart = ({
           legendType="circle"
           radius={[10, 10, 0, 0]}
         />
-
         <Bar
           dataKey="absent"
           fill="#C3EBFA"
@@ -53,4 +53,4 @@ const AttenndanceChart = ({
   );
 };
 
-export default AttenndanceChart;
+export default AttenndanceChart
