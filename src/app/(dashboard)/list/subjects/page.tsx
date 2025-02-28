@@ -8,6 +8,7 @@ import { Prisma, Subject, Teacher } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { ITEM_PER_PAGE } from "@/lib/setting";
 import { getRole } from "@/lib/utils";
+import FormContainer from "@/components/FormContainer";
 
 type SubjectList = Subject & { teachers: Teacher[] };
 
@@ -52,7 +53,7 @@ const SubjectsListPage = async ({
         </div>
       </td>
       <td className="hidden md:table-cell">
-        {item.teachers.map((teacher) => teacher.name).join(",")}
+        {item.teachers.map((teacher) => teacher.name + "" + teacher.surname).join(",")}
       </td>
   
       <td>
@@ -64,8 +65,8 @@ const SubjectsListPage = async ({
           </Link> */}
           {role === "admin" && (
             <>
-              <FormModal table={"subject"} type="update" data={item}/>
-              <FormModal table={"subject"} type={"delete"} id={item.id} />
+              <FormContainer table={"subject"} type="update" data={item}/>
+              <FormContainer table={"subject"} type={"delete"} id={item.id} />
             </>
           )}
         </div>

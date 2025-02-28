@@ -3,7 +3,7 @@ import React from "react";
 import Image from "next/image";
 import Pagination from "@/components/Pagination";
 import Table from "@/components/Table";
-import FormModal from "@/components/FormModal";
+import FormContainer from "@/components/FormContainer";
 import { Class, Prisma, Teacher } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { ITEM_PER_PAGE } from "@/lib/setting";
@@ -71,8 +71,8 @@ const ClassListPage =  async ({
           </Link> */}
           {role === "admin" && (
             <>
-              <FormModal table={"class"} type="update" data={item} />
-              <FormModal table={"class"} type={"delete"} id={item.id} />
+              <FormContainer table={"class"} type="update" data={item} />
+              <FormContainer table={"class"} type={"delete"} id={item.id} />
             </>
           )}
         </div>
@@ -125,7 +125,7 @@ const ClassListPage =  async ({
               // <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
               //   <Image src="/plus.png" alt="" width={14} height={14} />
               // </button>
-              <FormModal table={"class"} type={"create"} />
+              <FormContainer table={"class"} type={"create"} />
             )}
           </div>
         </div>

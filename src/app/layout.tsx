@@ -32,7 +32,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
         {children}
-        <ToastContainer position="top-right" theme="dark" />
+        <ToastContainer position="bottom-right" theme="dark" />
       </body>
     </html>
         </ClerkProvider>
