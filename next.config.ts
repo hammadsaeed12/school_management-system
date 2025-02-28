@@ -1,12 +1,19 @@
 import type { NextConfig } from "next";
-import { hostname } from "os";
 
 const nextConfig: NextConfig = {
-  images:{
-    remotePatterns:[
-      {hostname:"images.pexels.com"}
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https", // Allow only HTTPS
+        hostname: "res.cloudinary.com", // Allow images from Cloudinary
+      },
+      {
+        protocol: "https", // Allow only HTTPS
+        hostname: "images.pexels.com", // Allow images from Pexels
+      },
     ],
   },
 };
+
 
 export default nextConfig;

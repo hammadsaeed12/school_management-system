@@ -4,9 +4,25 @@ import BigCalendar from "@/components/BigCalendar";
 import Announcement from "@/components/Announcement";
 import Link from "next/link";
 import Performance from "@/components/Performance";
-import FormModal from "@/components/FormModal";
+import prisma from "@/lib/prisma";
+import { Teacher } from "@prisma/client";
+import { notFound } from "next/navigation";
+import FormContainer from "@/components/FormContainer";
 
-const SingleTeacherPage = () => {
+const SingleTeacherPage = async ({
+  params: { id },
+}: {
+  params: { id: string };
+}) => {
+  const teacher: Teacher | null = await prisma.teacher.findUnique({
+    where: {
+      id,
+    },
+  });
+
+  if(!teacher){
+    return notFound();
+  }  
   return (
     <div className="flex-1 p-4 flex flex-col xl:flex-row">
       {/* LEFT */}
@@ -17,7 +33,7 @@ const SingleTeacherPage = () => {
           <div className="bg-lamaSky py-6 px-4 rounded-md flex-1 flex gap-4">
             <div className="w-1/3">
               <Image
-                src="https://images.pexels.com/photos/2182970/pexels-photo-2182970.jpeg?auto=compress&cs=tinysrgb&w=1200"
+                src={teacher.img || "/noAvatar.png"}
                 alt=""
                 width={144}
                 height={144}
@@ -25,26 +41,13 @@ const SingleTeacherPage = () => {
               />
             </div>
             <div className="w-2/3 flex flex-col justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <h1 className="text-xl font-semibold">Leonard Snyder</h1>
-              <FormModal
-                table={"teacher"}
-                type={"update"}
-                data={{
-                  id: 1,
-                  username: "michealwilliams",
-                  email: "michealwilliams@gmail.com",
-                  password: "password",
-                  firstName: "Micheal",
-                  LastName: "williams",
-                  phone: "030012345",
-                  address: "12345 Main St,Anyton,USA",
-                  bloodType: "A+",
-                  dateOfBirth: "2000-01-01",
-                  gender: "male",
-                  img: "https://images.pexels.com/photos/2182970/pexels-photo-2182970.jpeg?auto=compress&cs=tinysrgb&w=1200",
-                }}
-              />
+              <div className="flex items-center gap-4">
+                <h1 className="text-xl font-semibold">{teacher.name + " " + teacher.surname}</h1>
+                <FormContainer
+                  table={"teacher"}
+                  type={"update"}
+                  data={teacher}
+                />
               </div>
               <p className="text-sm text-gray-500">
                 Lorem ipsum dolor sit amet consectetur adipisicing elit..
@@ -132,7 +135,7 @@ const SingleTeacherPage = () => {
         {/* BOTTOM */}
         <div className="mt-4 bg-white rounded-md p-4 h-[800px]">
           <h1 className="">Teacher&apos;s Schedule</h1>
-          <BigCalendar />
+          <BigCalendar data={[]} />
         </div>
       </div>
       {/* RIGHT */}
@@ -140,19 +143,34 @@ const SingleTeacherPage = () => {
         <div className="bg-white p-4 rounded-md">
           <h1 className="text-xl font-semibold">Shortcuts</h1>
           <div className="mt-4 flex gap-4 flex-wrap text-xs text-gray-500">
-            <Link className="p-3 rounded-md bg-lamaSkyLight" href={`/list/classes?supervisorId=${"teacher2"}`}>
+            <Link
+              className="p-3 rounded-md bg-lamaSkyLight"
+              href={`/list/classes?supervisorId=${"teacher2"}`}
+            >
               Teacher&apos;s Classes
             </Link>
-            <Link className="p-3 rounded-md bg-lamaPurpleLight" href={`/list/students?teacherId=${"teacher2"}`}>
+            <Link
+              className="p-3 rounded-md bg-lamaPurpleLight"
+              href={`/list/students?teacherId=${"teacher2"}`}
+            >
               Teacher&apos;s Students
             </Link>
-            <Link className="p-3 rounded-md bg-lamaYellowLight" href={`/list/lessons?teacherId=${"teacher2"}`}>
+            <Link
+              className="p-3 rounded-md bg-lamaYellowLight"
+              href={`/list/lessons?teacherId=${"teacher2"}`}
+            >
               Teacher&apos;s Lessons
             </Link>
-            <Link className="p-3 rounded-md bg-pink-50" href={`/list/exams?teacherId=${"teacher2"}`}>
+            <Link
+              className="p-3 rounded-md bg-pink-50"
+              href={`/list/exams?teacherId=${"teacher2"}`}
+            >
               Teacher&apos;s Exams
             </Link>
-            <Link className="p-3 rounded-md bg-lamaSkyLight" href={`/list/assignments?teacherId=${"teacher2"}`}>
+            <Link
+              className="p-3 rounded-md bg-lamaSkyLight"
+              href={`/list/assignments?teacherId=${"teacher2"}`}
+            >
               Teacher&apos;s Assingments
             </Link>
           </div>

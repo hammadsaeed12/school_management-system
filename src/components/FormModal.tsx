@@ -11,16 +11,15 @@ import React, {
 import Image from "next/image";
 import dynamic from "next/dynamic";
 import { useFormState } from "react-dom";
-import { deleteClass, deleteSubject } from "@/lib/actions";
+import { deleteClass, deleteSubject, deleteTeacher } from "@/lib/actions";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import { FormContainerProps } from "./FormContainer";
 
-
 const deleteActionMap = {
   subject: deleteSubject,
   class: deleteClass,
-  // teacher: deleteTeacher,
+  teacher: deleteTeacher,
   // student: deleteStudent,
   // exam: deleteExam,
   // parent: deleteSubject,
@@ -63,17 +62,32 @@ const forms: {
     relatedData?: any
   ) => JSX.Element;
 } = {
-  // teacher: (setOpen, type, data ,relatedData) => (
-  //   <TeacherForm type={type} data={data} setOpen={setOpen} relatedData={relatedData} />
-  // ),
   // student: (setOpen, type, data,relatedData) => (
-  //   <StudentForm type={type} data={data} setOpen={setOpen} relatedData={relatedData} />
-  // ),
-  subject: (setOpen, type, data,relatedData) => (
-    <SubjectForm type={type} data={data} setOpen={setOpen}  relatedData={relatedData} />
+    //   <StudentForm type={type} data={data} setOpen={setOpen} relatedData={relatedData} />
+    // ),
+    teacher: (setOpen, type, data, relatedData) => (
+      <TeacherForm
+        type={type}
+        data={data}
+        setOpen={setOpen}
+        relatedData={relatedData}
+      />
+    ),
+  subject: (setOpen, type, data, relatedData) => (
+    <SubjectForm
+      type={type}
+      data={data}
+      setOpen={setOpen}
+      relatedData={relatedData}
+    />
   ),
-  class: (setOpen, type, data,relatedData) => (
-    <ClassForm type={type} data={data} setOpen={setOpen}  relatedData={relatedData} />
+  class: (setOpen, type, data, relatedData) => (
+    <ClassForm
+      type={type}
+      data={data}
+      setOpen={setOpen}
+      relatedData={relatedData}
+    />
   ),
   // parent: (setOpen, type, data) => (
   //   <ParentForm type={type} data={data} setOpen={setOpen} />
