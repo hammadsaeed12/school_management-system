@@ -1,6 +1,9 @@
-import { currentUser } from "@clerk/nextjs/server";
+'use client'
 import Image from "next/image";
 import Link from "next/link";
+
+
+const allowedRoles = ["admin", "teacher", "student", "parent"];
 
 const menuItems = [
   {
@@ -118,8 +121,7 @@ const menuItems = [
 ];
 
 const Menu = async () => {
-  const user = await currentUser();
-  const role = user?.publicMetadata.role as string;
+  const role = 'teacher'
   return (
     <div className="mt-4 text-sm">
       {menuItems.map((i) => (

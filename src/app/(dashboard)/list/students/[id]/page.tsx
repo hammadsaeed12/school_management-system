@@ -85,14 +85,10 @@ const SingleStudentPage = async ({
                 height={24}
                 className="w-6 h-6"
               />
-              <Suspense>
-              <StudentAttendanceCard/>
+              <Suspense fallback="loading...">
+              <StudentAttendanceCard id ={student.id}/>
               </Suspense>
-              <div className=" ">
-                <h1 className="text-xl font-semibold">90%</h1>
-                <span className="text-sm text-gray-400">Attendance</span>
-              </div>
-            </div>
+             </div>
             {/* CARD 1 */}
             <div className="bg-white p-4 rounded-md flex gap-4 w-full md:w-[48%] xl:w-[45%] 2xl:w-[48%]">
               <Image
