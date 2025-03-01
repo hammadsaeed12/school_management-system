@@ -10,7 +10,6 @@ import React, {
 } from "react";
 import Image from "next/image";
 import dynamic from "next/dynamic";
-import { useFormState } from "react-dom";
 import { deleteClass, deleteSubject, deleteTeacher } from "@/lib/actions";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";

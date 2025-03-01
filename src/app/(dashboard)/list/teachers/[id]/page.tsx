@@ -8,13 +8,15 @@ import prisma from "@/lib/prisma";
 import { Teacher } from "@prisma/client";
 import { notFound } from "next/navigation";
 import FormContainer from "@/components/FormContainer";
-import { getRole } from "@/lib/utils";
+import { auth } from "@clerk/nextjs/server";
 
 const SingleTeacherPage = async ({
   params: { id },
 }: {
   params: { id: string };
 }) => {
+  const { sessionClaims } = await auth();
+  const role = (sessionClaims?.metadata as { role?: string })?.role;
   const teacher:
     | (Teacher & {
         _count: { subjects: number; lessons: number; classes: number };
@@ -35,7 +37,6 @@ const SingleTeacherPage = async ({
   if (!teacher) {
     return notFound();
   }
-  const role = await getRole();
   return (
     <div className="flex-1 p-4 flex flex-col xl:flex-row">
       {/* LEFT */}

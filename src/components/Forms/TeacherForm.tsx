@@ -12,12 +12,10 @@ import Image from "next/image";
 import { useForm } from "react-hook-form";
 import InputField from "../InputField";
 import { teacherSchema, TeacherSchema } from "@/lib/formValidationSchema";
-
 import { toast } from "react-toastify";
 import { createTeacher, updateTeacher } from "@/lib/actions";
 import { useRouter } from "next/navigation";
 import { CldUploadWidget } from "next-cloudinary";
-import { set } from "zod";
 
 const TeacherForm = ({
   type,
@@ -149,8 +147,18 @@ const TeacherForm = ({
           name="birthday"
           type="date"
           error={errors.birthday}
-          defaultValue={data?.birthday}
+          defaultValue={data?.birthday.toISOString().split("T")[0]}
         />
+         {data && (
+          <InputField
+            label="Id"
+            register={register}
+            name="id"
+            error={errors.id}
+            defaultValue={data?.id}
+            hidden
+          />
+        )}
         <div className="flex flex-col gap-2 w-full md:w-1/4">
           <label className="text-xs text-gray-500">sex</label>
           <select
