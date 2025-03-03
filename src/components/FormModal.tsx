@@ -10,7 +10,12 @@ import React, {
 } from "react";
 import Image from "next/image";
 import dynamic from "next/dynamic";
-import { deleteClass, deleteSubject, deleteTeacher } from "@/lib/actions";
+import {
+  deleteClass,
+  deleteStudent,
+  deleteSubject,
+  deleteTeacher,
+} from "@/lib/actions";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import { FormContainerProps } from "./FormContainer";
@@ -19,7 +24,7 @@ const deleteActionMap = {
   subject: deleteSubject,
   class: deleteClass,
   teacher: deleteTeacher,
-  // student: deleteStudent,
+  student: deleteStudent,
   // exam: deleteExam,
   // parent: deleteSubject,
   // lesson: deleteSubject,
@@ -61,17 +66,22 @@ const forms: {
     relatedData?: any
   ) => JSX.Element;
 } = {
-  // student: (setOpen, type, data,relatedData) => (
-    //   <StudentForm type={type} data={data} setOpen={setOpen} relatedData={relatedData} />
-    // ),
-    teacher: (setOpen, type, data, relatedData) => (
-      <TeacherForm
-        type={type}
-        data={data}
-        setOpen={setOpen}
-        relatedData={relatedData}
-      />
-    ),
+  student: (setOpen, type, data, relatedData) => (
+    <StudentForm
+      type={type}
+      data={data}
+      setOpen={setOpen}
+      relatedData={relatedData}
+    />
+  ),
+  teacher: (setOpen, type, data, relatedData) => (
+    <TeacherForm
+      type={type}
+      data={data}
+      setOpen={setOpen}
+      relatedData={relatedData}
+    />
+  ),
   subject: (setOpen, type, data, relatedData) => (
     <SubjectForm
       type={type}
@@ -120,7 +130,7 @@ const FormModal = ({
 
     useEffect(() => {
       if (state.success) {
-        toast(`Subject has been deleted!`);
+        toast(`${table} has been deleted!`);
         setOpen(false);
         router.refresh();
       }

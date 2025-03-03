@@ -9,6 +9,7 @@ import { Class, Student } from "@prisma/client";
 import prisma from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import StudentAttendanceCard from "@/components/StudentAttendanceCard";
+import BigCalendarContainer from "@/components/BigCalendarContainer";
 
 const SingleStudentPage = async ({
   params: { id },
@@ -85,13 +86,10 @@ const SingleStudentPage = async ({
                 height={24}
                 className="w-6 h-6"
               />
-              <Suspense>
-              <StudentAttendanceCard/>
+              <Suspense fallback="loading...">
+              <StudentAttendanceCard id={student.id}/>
               </Suspense>
-              <div className=" ">
-                <h1 className="text-xl font-semibold">90%</h1>
-                <span className="text-sm text-gray-400">Attendance</span>
-              </div>
+              
             </div>
             {/* CARD 1 */}
             <div className="bg-white p-4 rounded-md flex gap-4 w-full md:w-[48%] xl:w-[45%] 2xl:w-[48%]">
@@ -140,7 +138,7 @@ const SingleStudentPage = async ({
         {/* BOTTOM */}
         <div className="mt-4 bg-white rounded-md p-4 h-[800px]">
           <h1 className="">Student&apos;s Schedule</h1>
-          <BigCalendar data={[]} />
+          <BigCalendarContainer type ="classId" id={student.class.id} />
         </div>
       </div>
       {/* RIGHT */}

@@ -9,6 +9,7 @@ import { Teacher } from "@prisma/client";
 import { notFound } from "next/navigation";
 import FormContainer from "@/components/FormContainer";
 import { auth } from "@clerk/nextjs/server";
+import BigCalendarContainer from "@/components/BigCalendarContainer";
 
 const SingleTeacherPage = async ({
   params: { id },
@@ -17,6 +18,7 @@ const SingleTeacherPage = async ({
 }) => {
   const { sessionClaims } = await auth();
   const role = (sessionClaims?.metadata as { role?: string })?.role;
+  
   const teacher:
     | (Teacher & {
         _count: { subjects: number; lessons: number; classes: number };
@@ -155,7 +157,7 @@ const SingleTeacherPage = async ({
         {/* BOTTOM */}
         <div className="mt-4 bg-white rounded-md p-4 h-[800px]">
           <h1 className="">Teacher&apos;s Schedule</h1>
-          <BigCalendar data={[]} />
+          <BigCalendarContainer type ="teacherId" id={teacher.id} />
         </div>
       </div>
       {/* RIGHT */}
