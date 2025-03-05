@@ -1,13 +1,13 @@
-import TableSearch from "@/components/TableSearch";
-import React from "react";
-import Image from "next/image";
+import FormContainer from "@/components/FormContainer";
 import Pagination from "@/components/Pagination";
 import Table from "@/components/Table";
-import FormModal from "@/components/FormModal";
-import { Prisma } from "@prisma/client";
+import TableSearch from "@/components/TableSearch";
 import prisma from "@/lib/prisma";
 import { ITEM_PER_PAGE } from "@/lib/setting";
-import { getCurrentUserId, getRole } from "@/lib/utils";
+import { Prisma } from "@prisma/client";
+import Image from "next/image";
+
+import { auth } from "@clerk/nextjs/server";
 
 type ResultList = {
   id: number;
@@ -21,97 +21,93 @@ type ResultList = {
   startTime: Date;
 };
 
+
 const ResultListPage = async ({
   searchParams,
 }: {
   searchParams: { [key: string]: string | undefined };
 }) => {
-  const userId = await getCurrentUserId();
-  const role = await getRole();
+
+const { userId, sessionClaims } = await auth();
+const role = (sessionClaims?.metadata as { role?: string })?.role;
+const currentUserId = userId;
+
+
+const columns = [
+  {
+    header: "Title",
+    accessor: "title",
+  },
+  {
+    header: "Student",
+    accessor: "student",
+  },
+  {
+    header: "Score",
+    accessor: "score",
+    className: "hidden md:table-cell",
+  },
+  {
+    header: "Teacher",
+    accessor: "teacher",
+    className: "hidden md:table-cell",
+  },
+  {
+    header: "Class",
+    accessor: "class",
+    className: "hidden md:table-cell",
+  },
+  {
+    header: "Date",
+    accessor: "date",
+    className: "hidden md:table-cell",
+  },
+  ...(role === "admin" || role === "teacher"
+    ? [
+        {
+          header: "Actions",
+          accessor: "action",
+        },
+      ]
+    : []),
+];
+
+const renderRow = (item: ResultList) => (
+  <tr
+    key={item.id}
+    className="border-b border-gray-200 even:bg-slate-50 text-sm hover:bg-lamaPurpleLight"
+  >
+    <td className="flex items-center gap-4 p-4">{item.title}</td>
+    <td>{item.studentName + " " + item.studentName}</td>
+    <td className="hidden md:table-cell">{item.score}</td>
+    <td className="hidden md:table-cell">
+      {item.teacherName + " " + item.teacherSurname}
+    </td>
+    <td className="hidden md:table-cell">{item.className}</td>
+    <td className="hidden md:table-cell">
+      {new Intl.DateTimeFormat("en-US").format(item.startTime)}
+    </td>
+    <td>
+      <div className="flex items-center gap-2">
+        {(role === "admin" || role === "teacher") && (
+          <>
+            <FormContainer table="result" type="update" data={item} />
+            <FormContainer table="result" type="delete" id={item.id} />
+          </>
+        )}
+      </div>
+    </td>
+  </tr>
+);
+
   const { page, ...queryParams } = searchParams;
+
   const p = page ? parseInt(page) : 1;
-  // URL  PARAMS CONDITION
+
+  // URL PARAMS CONDITION
 
   const query: Prisma.ResultWhereInput = {};
 
-  const columns = [
-    {
-      header: "Title",
-      accessor: "title",
-    },
-
-    {
-      header: "Student",
-      accessor: "student",
-      className: "hidden md:table-cell",
-    },
-    {
-      header: "Score",
-      accessor: "score",
-      className: "hidden md:table-cell",
-    },
-    {
-      header: "Teacher",
-      accessor: "teacher",
-      className: "hidden md:table-cell",
-    },
-    {
-      header: "Class",
-      accessor: "class",
-      className: "hidden sm:table-cell",
-    },
-
-    {
-      header: "Date",
-      accessor: "Date",
-      className: "hidden md:table-cell",
-    },
-
-    ...(role === "admin" || role === "teacher"
-      ? [
-          {
-            header: "Action",
-            accessor: "action",
-          },
-        ]
-      : []),
-  ];
-
-  const renderRow = (item: ResultList) => (
-    <tr
-      key={item.id}
-      className="border-b border-gray-200 even:bg-slate-50 text-sm hover:bg-lamaPurpleLight"
-    >
-      <td className="flex items-center gap-4 p-4">{item.title}</td>
-      <td className="hidden sm:table-cell">
-        {item.studentName + "" + item.studentSurname}
-      </td>
-      <td className="hidden md:table-cell">{item.score}</td>
-      <td className="hidden md:table-cell">
-        {item.teacherName + "" + item.teacherSurname}
-      </td>
-      <td className="hidden md:table-cell">{item.className}</td>
-      <td className="hidden md:table-cell">
-        {new Intl.DateTimeFormat("en-US").format(item.startTime)}
-      </td>
-
-      <td>
-        <div className="flex items-center gap-2">
-          {/* <Link href={`/list/teachers/${item.id}`}>
-          <button className="w-7 h-7 flex items-center justify-center rounded-full bg-lamaSky">
-            <Image src="/view.png" alt="" width={16} height={16}/>
-          </button>
-          </Link> */}
-          {(role === "admin" || role === "teacher") && (
-            <>
-              <FormModal table={"parent"} type="update" data={item} />
-              <FormModal table={"parent"} type={"delete"} id={item.id} />
-            </>
-          )}
-        </div>
-      </td>
-    </tr>
-  );
   if (queryParams) {
     for (const [key, value] of Object.entries(queryParams)) {
       if (value !== undefined) {
@@ -124,7 +120,6 @@ const ResultListPage = async ({
               { exam: { title: { contains: value, mode: "insensitive" } } },
               { student: { name: { contains: value, mode: "insensitive" } } },
             ];
-
             break;
           default:
             break;
@@ -133,25 +128,25 @@ const ResultListPage = async ({
     }
   }
 
-  //ROLE CONDITIONS
+  // ROLE CONDITIONS
 
   switch (role) {
     case "admin":
       break;
     case "teacher":
       query.OR = [
-        { exam: { lesson: { teacherId: userId! } } },
-        { assignment: { lesson: { teacherId: userId! } } },
+        { exam: { lesson: { teacherId: currentUserId! } } },
+        { assignment: { lesson: { teacherId: currentUserId! } } },
       ];
       break;
 
     case "student":
-      query.studentId = userId!;
+      query.studentId = currentUserId!;
       break;
 
     case "parent":
       query.student = {
-        parentId: userId!,
+        parentId: currentUserId!,
       };
       break;
     default:
@@ -215,7 +210,7 @@ const ResultListPage = async ({
       {/* TOP */}
       <div className="flex items-center justify-between">
         <h1 className="hidden md:block text-lg font-semibold">All Results</h1>
-        <div className="flex flex-col md:flex-row items-center gap-4  w-full md:w-auto">
+        <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
           <TableSearch />
           <div className="flex items-center gap-4 self-end">
             <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
@@ -225,10 +220,7 @@ const ResultListPage = async ({
               <Image src="/sort.png" alt="" width={14} height={14} />
             </button>
             {(role === "admin" || role === "teacher") && (
-              // <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
-              //   <Image src="/plus.png" alt="" width={14} height={14} />
-              // </button>
-              <FormModal table={"result"} type={"create"} />
+              <FormContainer table="result" type="create" />
             )}
           </div>
         </div>

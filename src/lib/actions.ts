@@ -259,23 +259,21 @@ export const createStudent = async (
   data: StudentSchema
 ) => {
   try {
+    // Check class capacity
     const classItem = await prisma.class.findUnique({
-      where: {
-        id: data.classId,
-      },
-      include: {
-        _count: { select: { students: true } },
-      },
+      where: { id: data.classId },
+      include: { _count: { select: { students: true } } },
     });
 
-    if (classItem && classItem.capacity >= classItem._count.students) {
-      return { success: false, error: true };
+    if (classItem && classItem.capacity <= classItem._count.students) {
+      return { success: false, error: true, message: "Class is full" };
     }
 
-    const client = await clerkClient();
-
+    // Log data being sent to Clerk
     console.log("Data being sent to Clerk:", data);
 
+    // Create user in Clerk
+    const client = await clerkClient();
     const user = await client.users.createUser({
       username: data.username,
       password: data.password,
@@ -286,6 +284,7 @@ export const createStudent = async (
 
     console.log("User created in Clerk:", user);
 
+    // Create student in Prisma
     await prisma.student.create({
       data: {
         id: user.id,
@@ -305,23 +304,21 @@ export const createStudent = async (
       },
     });
 
-    
+    // Revalidate path (if using Next.js caching)
     // revalidatePath("/list/students");
 
     return { success: true, error: false };
   } catch (err) {
-    // Log the full error object for debugging
-    console.error("Error creating teacher:", err);
+    console.error("Error creating student:", err);
 
-    // Log the specific errors returned by Clerk
+    // Log Clerk-specific errors
     if ((err as any).errors) {
       console.error("Clerk API errors:", (err as any).errors);
     }
 
-    return { success: false, error: true };
+    return { success: false, error: true, message: (err instanceof Error ? err.message : "An error occurred") };
   }
 };
-
 export const updateStudent = async (
   currentState: CurrentState,
   data: StudentSchema

@@ -5,6 +5,7 @@ import React, {
   SetStateAction,
   useActionState,
   useEffect,
+  useTransition,
 } from "react";
 import { useForm } from "react-hook-form";
 import InputField from "../InputField";
@@ -32,6 +33,7 @@ const ExamForm = ({
     resolver: zodResolver(examSchema),
   });
 
+  const [isPending, startTransition] = useTransition();
   const [state, formAction] = useActionState(
     type === "create" ? createExam : updateExam,
     {
@@ -40,7 +42,9 @@ const ExamForm = ({
     }
   );
   const onSubmit = handleSubmit((data) => {
-    console.log(data);
+    startTransition(() => {
+      formAction(data);
+    });
     formAction(data);
   });
 
