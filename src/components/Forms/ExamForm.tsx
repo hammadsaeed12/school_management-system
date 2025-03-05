@@ -45,7 +45,6 @@ const ExamForm = ({
     startTransition(() => {
       formAction(data);
     });
-    formAction(data);
   });
 
   const router = useRouter();
