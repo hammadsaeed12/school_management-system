@@ -19,11 +19,6 @@ const StudentListPage = async ({
 }) => {
   const { sessionClaims } = await auth();
   const role = (sessionClaims?.metadata as { role?: string })?.role;
-  const { page, ...queryParams } = await searchParams;
-  const p = page ? parseInt(page) : 1;
-  // URL  PARAMS CONDITION
-  
-  const query: Prisma.StudentWhereInput = {};
   const columns = [
     {
       header: "info",
@@ -87,16 +82,21 @@ const StudentListPage = async ({
           </button>
           </Link>
           {role ==="admin" &&(
-          //   <button className="w-7 h-7 flex items-center justify-center rounded-full bg-lamaPurple">
-          //   <Image src="/delete.png" alt="" width={16} height={16}/>
-          // </button>
-          <FormContainer table={"student"} type={"delete"} id={item.id}/>
+            //   <button className="w-7 h-7 flex items-center justify-center rounded-full bg-lamaPurple">
+            //   <Image src="/delete.png" alt="" width={16} height={16}/>
+            // </button>
+            <FormContainer table={"student"} type={"delete"} id={item.id}/>
           )}
         </div>
       </td>
     </tr>
   );
-
+  
+  const { page, ...queryParams } = await searchParams;
+  const p = page ? parseInt(page) : 1;
+  // URL  PARAMS CONDITION
+  
+  const query: Prisma.StudentWhereInput = {};
   if (queryParams) {
     for (const [key, value] of Object.entries(queryParams)) {
       if (value !== undefined) {

@@ -1,21 +1,21 @@
 "use client";
+
 import { zodResolver } from "@hookform/resolvers/zod";
-import React, {
-  Dispatch,
-  SetStateAction,
-  startTransition,
-  useActionState,
-  useEffect,
-  useState,
-} from "react";
-import Image from "next/image";
 import { useForm } from "react-hook-form";
 import InputField from "../InputField";
-import { studentSchema, StudentSchema } from "@/lib/formValidationSchema";
-import { toast } from "react-toastify";
+import Image from "next/image";
+import { Dispatch, SetStateAction, useActionState, useEffect, useState, startTransition } from "react";
+import {
+  studentSchema,
+  StudentSchema,
+} from "@/lib/formValidationSchema";
+import {
+  createStudent,
+  updateStudent,
+} from "@/lib/actions";
 import { useRouter } from "next/navigation";
+import { toast } from "react-toastify";
 import { CldUploadWidget } from "next-cloudinary";
-import { createStudent, updateStudent } from "@/lib/actions";
 
 const StudentForm = ({
   type,
@@ -24,7 +24,7 @@ const StudentForm = ({
   relatedData,
 }: {
   type: "create" | "update";
-  data: any;
+  data?: any;
   setOpen: Dispatch<SetStateAction<boolean>>;
   relatedData?: any;
 }) => {
@@ -36,7 +36,7 @@ const StudentForm = ({
     resolver: zodResolver(studentSchema),
   });
 
-  const [img, setImg] = useState<any>(null);
+  const [img, setImg] = useState<any>();
 
   const [state, formAction] = useActionState(
     type === "create" ? createStudent : updateStudent,
@@ -45,7 +45,9 @@ const StudentForm = ({
       error: false,
     }
   );
+
   const onSubmit = handleSubmit((data) => {
+    console.log("hello");
     console.log(data);
     startTransition(() => {
       formAction({ ...data, img: img?.secure_url });
@@ -60,7 +62,7 @@ const StudentForm = ({
       setOpen(false);
       router.refresh();
     }
-  }, [state]);
+  }, [state, router, type, setOpen]);
 
   const { grades, classes } = relatedData;
 
@@ -75,30 +77,27 @@ const StudentForm = ({
       <div className="flex justify-between flex-wrap gap-4">
         <InputField
           label="Username"
-          register={register}
           name="username"
-          error={errors.username}
           defaultValue={data?.username}
+          register={register}
+          error={errors?.username}
         />
         <InputField
           label="Email"
-          register={register}
           name="email"
-          type="email"
-          error={errors.email}
           defaultValue={data?.email}
+          register={register}
+          error={errors?.email}
         />
-        
         <InputField
           label="Password"
-          register={register}
           name="password"
           type="password"
-          error={errors.password}
           defaultValue={data?.password}
+          register={register}
+          error={errors?.password}
         />
       </div>
-
       <span className="text-xs text-gray-400 font-medium">
         Personal Information
       </span>
@@ -123,73 +122,70 @@ const StudentForm = ({
       </CldUploadWidget>
       <div className="flex justify-between flex-wrap gap-4">
         <InputField
-          label="Firstname"
-          register={register}
+          label="First Name"
           name="name"
-          error={errors.name}
           defaultValue={data?.name}
+          register={register}
+          error={errors.name}
         />
         <InputField
-          label="Lastname"
-          register={register}
+          label="Last Name"
           name="surname"
-          type="surname"
-          error={errors.surname}
           defaultValue={data?.surname}
-        />
-        <InputField
-          label="Parent Id"
           register={register}
-          name="parentId"
-          error={errors.parentId}
-          defaultValue={data?.parentId}
+          error={errors.surname}
         />
         <InputField
           label="Phone"
-          register={register}
           name="phone"
-          type="phone"
-          error={errors.phone}
           defaultValue={data?.phone}
+          register={register}
+          error={errors.phone}
         />
         <InputField
           label="Address"
-          register={register}
           name="address"
-          type="address"
-          error={errors.address}
           defaultValue={data?.address}
+          register={register}
+          error={errors.address}
         />
         <InputField
-          label="BloodType"
-          register={register}
+          label="Blood Type"
           name="bloodType"
-          type="bloodType"
-          error={errors.bloodType}
           defaultValue={data?.bloodType}
+          register={register}
+          error={errors.bloodType}
         />
         <InputField
           label="Birthday"
-          register={register}
           name="birthday"
-          type="date"
-          error={errors.birthday}
           defaultValue={data?.birthday.toISOString().split("T")[0]}
+          register={register}
+          error={errors.birthday}
+          type="date"
         />
+        <InputField
+          label="Parent Id"
+          name="parentId"
+          defaultValue={data?.parentId}
+          register={register}
+          error={errors.parentId}
+          />
+      
         {data && (
           <InputField
             label="Id"
-            register={register}
             name="id"
-            error={errors.id}
             defaultValue={data?.id}
+            register={register}
+            error={errors?.id}
             hidden
           />
         )}
         <div className="flex flex-col gap-2 w-full md:w-1/4">
-          <label className="text-xs text-gray-500">sex</label>
+          <label className="text-xs text-gray-500">Sex</label>
           <select
-            className="ring-[1.5px] ring-gray-300  p-2 rounded-md text-sm w-full  border  bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+            className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
             {...register("sex")}
             defaultValue={data?.sex}
           >
@@ -205,11 +201,11 @@ const StudentForm = ({
         <div className="flex flex-col gap-2 w-full md:w-1/4">
           <label className="text-xs text-gray-500">Grade</label>
           <select
-            className="ring-[1.5px] ring-gray-300  p-2 rounded-md text-sm w-full  border  bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+            className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
             {...register("gradeId")}
             defaultValue={data?.gradeId}
           >
-            {grades.map((grade: { id: string; level: number }) => (
+            {grades.map((grade: { id: number; level: number }) => (
               <option value={grade.id} key={grade.id}>
                 {grade.level}
               </option>
@@ -224,13 +220,13 @@ const StudentForm = ({
         <div className="flex flex-col gap-2 w-full md:w-1/4">
           <label className="text-xs text-gray-500">Class</label>
           <select
-            className="ring-[1.5px] ring-gray-300  p-2 rounded-md text-sm w-full  border  bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+            className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
             {...register("classId")}
             defaultValue={data?.classId}
           >
             {classes.map(
               (classItem: {
-                id: string;
+                id: number;
                 name: string;
                 capacity: number;
                 _count: { students: number };
@@ -253,7 +249,7 @@ const StudentForm = ({
       {state.error && (
         <span className="text-red-500">Something went wrong!</span>
       )}
-      <button className="bg-blue-400 text-white p-2 rounded-md">
+      <button type="submit" className="bg-blue-400 text-white p-2 rounded-md">
         {type === "create" ? "Create" : "Update"}
       </button>
     </form>
@@ -261,4 +257,3 @@ const StudentForm = ({
 };
 
 export default StudentForm;
-
