@@ -5,11 +5,10 @@ import * as SignIn from "@clerk/elements/sign-in";
 import { useUser } from "@clerk/nextjs";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
-import React, { useEffect } from "react";
-
-const loginPage = () => {
-  const { isSignedIn, user, isLoaded } = useUser();
+const LoginPage = () => {
+  const { isLoaded, isSignedIn, user } = useUser();
 
   const router = useRouter();
 
@@ -20,6 +19,7 @@ const loginPage = () => {
       router.push(`/${role}`);
     }
   }, [user, router]);
+
   return (
     <div className="h-screen flex items-center justify-center bg-lamaSkyLight">
       <SignIn.Root>
@@ -29,10 +29,9 @@ const loginPage = () => {
         >
           <h1 className="text-xl font-bold flex items-center gap-2">
             <Image src="/logo.png" alt="" width={24} height={24} />
-            School
+            SchooLama
           </h1>
           <h2 className="text-gray-400">Sign in to your account</h2>
-
           <Clerk.GlobalError className="text-sm text-red-400" />
           <Clerk.Field name="identifier" className="flex flex-col gap-2">
             <Clerk.Label className="text-xs text-gray-500">
@@ -68,4 +67,4 @@ const loginPage = () => {
   );
 };
 
-export default loginPage;
+export default LoginPage;
