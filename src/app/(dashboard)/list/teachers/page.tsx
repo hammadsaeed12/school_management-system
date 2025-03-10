@@ -16,7 +16,7 @@ const TeacherListPage = async ({
 }: {
   searchParams: { [key: string]: string | undefined };
 }) => {
-  const { sessionClaims } =await auth();
+  const { sessionClaims } = await auth();
   const role = (sessionClaims?.metadata as { role?: string })?.role;
   const columns = [
     {
@@ -93,26 +93,24 @@ const TeacherListPage = async ({
             </button>
           </Link>
           {role === "admin" && (
-            // <button className="w-7 h-7 flex items-center justify-center rounded-full bg-lamaPurple">
-            //   <Image src="/delete.png" alt="" width={16} height={16} />
-            // </button>
             <FormContainer table="teacher" type="delete" id={item.id} />
           )}
         </div>
       </td>
     </tr>
   );
-  const { page, ...queryParams } = searchParams;
-
-  const p = page ? parseInt(page) : 1;
+  
+  // Safely extract page and other query parameters
+  const pageParam = searchParams.page;
+  const p = pageParam ? parseInt(pageParam) : 1;
 
   // URL PARAMS CONDITION
-
   const query: Prisma.TeacherWhereInput = {};
 
-  if (queryParams) {
-    for (const [key, value] of Object.entries(queryParams)) {
-      if (value !== undefined) {
+  // Process other query parameters
+  if (searchParams) {
+    Object.entries(searchParams).forEach(([key, value]) => {
+      if (value !== undefined && key !== 'page') {
         switch (key) {
           case "classId":
             query.lessons = {
@@ -128,7 +126,7 @@ const TeacherListPage = async ({
             break;
         }
       }
-    }
+    });
   }
 
   const [data, count] = await prisma.$transaction([

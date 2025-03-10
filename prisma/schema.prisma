@@ -36,7 +36,7 @@ model Student {
 }
 
 model Teacher {
-  id        String    @id
+  id        String    @id@default(uuid())
   username  String    @unique
   name      String
   surname   String
@@ -51,6 +51,8 @@ model Teacher {
   lessons   Lesson[]
   classes   Class[]
   birthday  DateTime
+
+  User User[]
 }
 
 model Parent {
@@ -190,4 +192,12 @@ enum Day {
   WEDNESDAY
   THURSDAY
   FRIDAY
+}
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  password  String   // Ensure this is hashed
+  role      String   // e.g., "teacher", "admin", "student", "parent"
+  teacherId String?  // Link to the Teacher table
+  teacher   Teacher? @relation(fields: [teacherId], references: [id])
 }

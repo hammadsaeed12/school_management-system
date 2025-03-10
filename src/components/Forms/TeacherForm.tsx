@@ -4,7 +4,6 @@ import React, {
   Dispatch,
   SetStateAction,
   startTransition,
-  useActionState,
   useEffect,
   useState,
 } from "react";
@@ -17,6 +16,13 @@ import { createTeacher, updateTeacher } from "@/lib/actions";
 import { useRouter } from "next/navigation";
 import { CldUploadWidget } from "next-cloudinary";
 
+// Define the expected return type from the server actions
+interface ActionResult {
+  success: boolean;
+  error: boolean;
+  message?: string;
+}
+
 const TeacherForm = ({
   type,
   data,
@@ -28,47 +34,140 @@ const TeacherForm = ({
   setOpen: Dispatch<SetStateAction<boolean>>;
   relatedData?: any;
 }) => {
+  // Extract subjects from relatedData early to use in defaultValues
+  const availableSubjects = relatedData?.subjects || [];
+  
+  // Format data for the form
+  const formattedData = data ? {
+    ...data,
+    birthday: data.birthday ? new Date(data.birthday) : undefined,
+    sex: data.sex || "MALE",
+    bloodType: data.bloodType || "",
+    address: data.address || "",
+    // Ensure subjects is an array
+    subjects: Array.isArray(data.subjects) 
+      ? data.subjects.map((s: any) => typeof s === 'object' ? s.id : s) 
+      : []
+  } : {
+    sex: "MALE",
+    bloodType: "",
+    address: "",
+    subjects: []
+  };
+  
+  console.log("Initial form data:", formattedData);
+  
   const {
     register,
     handleSubmit,
     formState: { errors },
+    watch,
   } = useForm<TeacherSchema>({
     resolver: zodResolver(teacherSchema),
+    defaultValues: formattedData
   });
 
-  const [img, setImg] = useState<any>(null);
-
-  const [state, formAction] = useActionState(
-    type === "create" ? createTeacher : updateTeacher,
-    {
-      success: false,
-      error: false,
-    }
-  );
-  const onSubmit = handleSubmit((data) => {
-    console.log(data);
-    startTransition(() => {
-      formAction({...data,img:img?.secure_url});
-    });
-  });
-
+  const [img, setImg] = useState<any>(data?.img ? { secure_url: data.img } : null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formSuccess, setFormSuccess] = useState(false);
+  
   const router = useRouter();
 
-  useEffect(() => {
-    if (state.success) {
-      toast(`Teacher has been ${type === "create" ? "created" : "updated"}!`);
-      setOpen(false);
-      router.refresh();
+  const onSubmit = handleSubmit(async (formData) => {
+    setErrorMessage(null);
+    setIsSubmitting(true);
+    
+    // Log the form data for debugging
+    console.log("Form data being submitted:", formData);
+    
+    // Ensure all required fields are present
+    const requiredFields = ["username", "name", "surname", "birthday", "bloodType", "sex"];
+    const missingFields = [];
+    
+    for (const field of requiredFields) {
+      if (!formData[field as keyof TeacherSchema]) {
+        missingFields.push(field);
+      }
     }
-  }, [state]);
+    
+    // Add password validation for create
+    if (type === "create" && (!formData.password || formData.password === "")) {
+      missingFields.push("password");
+    }
+    
+    if (missingFields.length > 0) {
+      setErrorMessage(`Missing required fields: ${missingFields.join(', ')}`);
+      setIsSubmitting(false);
+      return;
+    }
+    
+    // Create a copy of the data for formatting
+    const formattedData = { ...formData };
+    
+    // Add the image if available
+    if (img?.secure_url) {
+      formattedData.img = img.secure_url;
+    }
+    
+    // Set default values for optional fields
+    formattedData.address = formattedData.address || "";
+    formattedData.bloodType = formattedData.bloodType || "";
+    formattedData.sex = formattedData.sex || "MALE";
+    
+    // Ensure subjects is an array
+    if (formattedData.subjects && !Array.isArray(formattedData.subjects)) {
+      formattedData.subjects = [];
+    }
+    
+    // For update, make sure we have the ID
+    if (type === "update" && !formattedData.id && data?.id) {
+      formattedData.id = data.id;
+    }
+    
+    console.log("Formatted data being sent to server:", formattedData);
+    
+    try {
+      let result: ActionResult;
+      if (type === "create") {
+        result = await createTeacher(formattedData);
+      } else {
+        result = await updateTeacher({ success: false, error: false }, formattedData);
+      }
+      
+      console.log("Action result:", result);
+      
+      if (result.success) {
+        toast(`Teacher has been ${type === "create" ? "created" : "updated"}!`);
+        setFormSuccess(true);
+        setOpen(false);
+        router.refresh();
+      } else {
+        setErrorMessage(result.message || "Something went wrong!");
+      }
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      setErrorMessage("An unexpected error occurred");
+    } finally {
+      setIsSubmitting(false);
+    }
+  });
 
-  const { subjects } = relatedData;
+  // For debugging - watch all form values
+  const allValues = watch();
+  console.log("Current form values:", allValues);
 
   return (
     <form className="flex flex-col gap-8" onSubmit={onSubmit}>
       <h1 className="text-xl font-semibold">
         {type === "create" ? "Create a new teacher" : "Update the teacher"}
       </h1>
+      
+      {/* Hidden ID field for updates */}
+      {type === "update" && data?.id && (
+        <input type="hidden" {...register("id")} defaultValue={data.id} />
+      )}
+      
       <span className="text-xs text-gray-400 font-medium">
         Authentication Information
       </span>
@@ -79,6 +178,7 @@ const TeacherForm = ({
           name="username"
           error={errors.username}
           defaultValue={data?.username}
+          required
         />
         <InputField
           label="Email"
@@ -94,7 +194,8 @@ const TeacherForm = ({
           name="password"
           type="password"
           error={errors.password}
-          defaultValue={data?.password}
+          defaultValue=""
+          required={type === "create"}
         />
       </div>
 
@@ -108,20 +209,20 @@ const TeacherForm = ({
           name="name"
           error={errors.name}
           defaultValue={data?.name}
+          required
         />
         <InputField
           label="Lastname"
           register={register}
           name="surname"
-          type="surname"
           error={errors.surname}
           defaultValue={data?.surname}
+          required
         />
         <InputField
           label="Phone"
           register={register}
           name="phone"
-          type="phone"
           error={errors.phone}
           defaultValue={data?.phone}
         />
@@ -129,17 +230,17 @@ const TeacherForm = ({
           label="Address"
           register={register}
           name="address"
-          type="address"
           error={errors.address}
-          defaultValue={data?.address}
+          defaultValue={data?.address || ""}
+          required
         />
         <InputField
           label="BloodType"
           register={register}
           name="bloodType"
-          type="bloodType"
           error={errors.bloodType}
-          defaultValue={data?.bloodType}
+          defaultValue={data?.bloodType || ""}
+          required
         />
         <InputField
           label="Birthday"
@@ -147,24 +248,16 @@ const TeacherForm = ({
           name="birthday"
           type="date"
           error={errors.birthday}
-          defaultValue={data?.birthday.toISOString().split("T")[0]}
+          defaultValue={data?.birthday ? new Date(data.birthday).toISOString().split("T")[0] : undefined}
+          required
         />
-         {data && (
-          <InputField
-            label="Id"
-            register={register}
-            name="id"
-            error={errors.id}
-            defaultValue={data?.id}
-            hidden
-          />
-        )}
         <div className="flex flex-col gap-2 w-full md:w-1/4">
-          <label className="text-xs text-gray-500">sex</label>
+          <label className="text-xs text-gray-500">Sex <span className="text-red-500">*</span></label>
           <select
-            className="ring-[1.5px] ring-gray-300  p-2 rounded-md text-sm w-full  border  bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+            className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full border bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
             {...register("sex")}
-            defaultValue={data?.sex}
+            defaultValue={data?.sex || "MALE"}
+            required
           >
             <option value="MALE">Male</option>
             <option value="FEMALE">Female</option>
@@ -179,12 +272,17 @@ const TeacherForm = ({
           <label className="text-xs text-gray-500">Subjects</label>
           <select
             multiple
-            className="ring-[1.5px] ring-gray-300  p-2 rounded-md text-sm w-full  border  bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+            className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full border bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
             {...register("subjects")}
-            defaultValue={data?.subjects}
           >
-            {subjects.map((subject: { id: string; name: string }) => (
-              <option value={subject.id} key={subject.id}>
+            {availableSubjects.map((subject: { id: string; name: string }) => (
+              <option 
+                value={subject.id} 
+                key={subject.id}
+                selected={data?.subjects?.some((s: any) => 
+                  (typeof s === 'object' ? s.id : s) === subject.id
+                )}
+              >
                 {subject.name}
               </option>
             ))}
@@ -216,11 +314,14 @@ const TeacherForm = ({
           }}
         </CldUploadWidget>
       </div>
-      {state.error && (
-        <span className="text-red-500">Something went wrong!</span>
+      {errorMessage && (
+        <span className="text-red-500">{errorMessage}</span>
       )}
-      <button className="bg-blue-400 text-white p-2 rounded-md">
-        {type === "create" ? "Create" : "Update"}
+      <button 
+        className="bg-blue-400 text-white p-2 rounded-md disabled:bg-gray-300"
+        disabled={isSubmitting}
+      >
+        {isSubmitting ? "Processing..." : (type === "create" ? "Create" : "Update")}
       </button>
     </form>
   );

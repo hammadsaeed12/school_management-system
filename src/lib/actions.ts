@@ -1,6 +1,5 @@
 "use server";
 
-import { clerkClient } from "@clerk/nextjs/server";
 import {
   ClassSchema,
   ExamSchema,
@@ -9,6 +8,7 @@ import {
   TeacherSchema,
 } from "./formValidationSchema";
 import prisma from "./prisma";
+import { revalidatePath } from "next/cache";
 
 type CurrentState = { success: boolean; error: boolean };
 
@@ -17,15 +17,19 @@ export const createSubject = async (
   data: SubjectSchema
 ) => {
   try {
-    await prisma.subject.create({
-      data: {
-        name: data.name,
-        teachers: {
-          connect: data.teachers.map((teacherId) => ({ id: teacherId })),
-        },
-      },
+    const response = await fetch("http://localhost:3000/api/subjects", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
     });
-    // revalidatePath("/list/subjects");
+
+    if (!response.ok) {
+      const errorResponse = await response.json();
+      console.error("API Error:", errorResponse);
+      throw new Error(errorResponse.error || "Failed to create subject");
+    }
+
+    revalidatePath("/list/subjects");
     return { success: true, error: false };
   } catch (err) {
     console.log(err);
@@ -38,36 +42,43 @@ export const updateSubject = async (
   data: SubjectSchema
 ) => {
   try {
-    await prisma.subject.update({
-      where: {
-        id: data.id,
-      },
-      data: {
-        name: data.name,
-        teachers: {
-          set: data.teachers.map((teacherId) => ({ id: teacherId })),
-        },
-      },
+    const response = await fetch("http://localhost:3000/api/subjects", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
     });
-    // revalidatePath("/list/subjects");
+
+    if (!response.ok) {
+      const errorResponse = await response.json();
+      console.error("API Error:", errorResponse);
+      throw new Error(errorResponse.error || "Failed to update subject");
+    }
+
+    revalidatePath("/list/subjects");
     return { success: true, error: false };
   } catch (err) {
     console.log(err);
     return { success: false, error: true };
   }
 };
+
 export const deleteSubject = async (
   currentState: CurrentState,
   data: FormData
 ) => {
   const id = data.get("id") as string;
   try {
-    await prisma.subject.delete({
-      where: {
-        id: parseInt(id),
-      },
+    const response = await fetch(`http://localhost:3000/api/subjects?id=${id}`, {
+      method: "DELETE",
     });
-    // revalidatePath("/list/subjects");
+
+    if (!response.ok) {
+      const errorResponse = await response.json();
+      console.error("API Error:", errorResponse);
+      throw new Error(errorResponse.error || "Failed to delete subject");
+    }
+
+    revalidatePath("/list/subjects");
     return { success: true, error: false };
   } catch (err) {
     console.log(err);
@@ -80,10 +91,19 @@ export const createClass = async (
   data: ClassSchema
 ) => {
   try {
-    await prisma.class.create({
-      data,
+    const response = await fetch("http://localhost:3000/api/classes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
     });
-    // revalidatePath("/list/class");
+
+    if (!response.ok) {
+      const errorResponse = await response.json();
+      console.error("API Error:", errorResponse);
+      throw new Error(errorResponse.error || "Failed to create class");
+    }
+
+    revalidatePath("/list/classes");
     return { success: true, error: false };
   } catch (err) {
     console.log(err);
@@ -96,91 +116,117 @@ export const updateClass = async (
   data: ClassSchema
 ) => {
   try {
-    await prisma.class.update({
-      where: {
-        id: data.id,
-      },
-      data,
+    const response = await fetch("http://localhost:3000/api/classes", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
     });
-    // revalidatePath("/list/class");
+
+    if (!response.ok) {
+      const errorResponse = await response.json();
+      console.error("API Error:", errorResponse);
+      throw new Error(errorResponse.error || "Failed to update class");
+    }
+
+    revalidatePath("/list/classes");
     return { success: true, error: false };
   } catch (err) {
     console.log(err);
     return { success: false, error: true };
   }
 };
+
 export const deleteClass = async (
   currentState: CurrentState,
   data: FormData
 ) => {
   const id = data.get("id") as string;
   try {
-    await prisma.class.delete({
-      where: {
-        id: parseInt(id),
-      },
+    const response = await fetch(`http://localhost:3000/api/classes?id=${id}`, {
+      method: "DELETE",
     });
-    // revalidatePath("/list/class");
+
+    if (!response.ok) {
+      const errorResponse = await response.json();
+      console.error("API Error:", errorResponse);
+      throw new Error(errorResponse.error || "Failed to delete class");
+    }
+
+    revalidatePath("/list/classes");
     return { success: true, error: false };
   } catch (err) {
     console.log(err);
     return { success: false, error: true };
   }
 };
-export const createTeacher = async (
-  currentState: CurrentState,
-  data: TeacherSchema
-) => {
+
+export const createTeacher = async (data: any) => {
   try {
-    const client = await clerkClient();
-
-    console.log("Data being sent to Clerk:", data);
-
-    const user = await client.users.createUser({
-      username: data.username,
-      password: data.password,
-      firstName: data.name,
-      lastName: data.surname,
-      publicMetadata: { role: "teacher" },
+    // Log the data received by the server action
+    console.log("createTeacher received data:", JSON.stringify(data, null, 2));
+    
+    // Ensure all required fields are present
+    const requiredFields = ["username", "name", "surname", "birthday", "password", "bloodType", "sex"];
+    const missingFields = [];
+    
+    for (const field of requiredFields) {
+      if (data[field] === undefined || data[field] === null || data[field] === "") {
+        missingFields.push(field);
+      }
+    }
+    
+    if (missingFields.length > 0) {
+      console.error(`Missing required fields: ${missingFields.join(', ')}`);
+      return { 
+        success: false, 
+        error: true, 
+        message: `Missing required fields: ${missingFields.join(', ')}`,
+        receivedData: Object.keys(data)
+      };
+    }
+    
+    // Create a copy of the data for formatting
+    const formattedData = { ...data };
+    
+    // Set default values for optional fields
+    formattedData.address = formattedData.address || "";
+    formattedData.bloodType = formattedData.bloodType || "";
+    formattedData.sex = formattedData.sex || "MALE";
+    
+    // Convert email and phone to undefined if they're null
+    // This avoids type errors with the API
+    if (formattedData.email === null) formattedData.email = undefined;
+    if (formattedData.phone === null) formattedData.phone = undefined;
+    
+    console.log("Formatted data being sent to API:", JSON.stringify(formattedData, null, 2));
+    
+    const response = await fetch("http://localhost:3000/api/teachers", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(formattedData),
     });
 
-    console.log("User created in Clerk:", user);
-
-    await prisma.teacher.create({
-      data: {
-        id: user.id,
-        username: data.username,
-        name: data.name,
-        surname: data.surname,
-        email: data.email || null,
-        phone: data.phone || null,
-        address: data.address,
-        img: data.img || null,
-        bloodType: data.bloodType,
-        sex: data.sex,
-        birthday: data.birthday,
-        subjects: {
-          connect: data.subjects?.map((subjectId: string) => ({
-            id: parseInt(subjectId),
-          })),
-        },
-      },
-    });
-
-    // Revalidate the path if needed (commented out for now)
-    // revalidatePath("/list/teachers");
+    const responseData = await response.json();
+    console.log("API response:", responseData);
+    
+    if (!response.ok) {
+      console.error("API Error:", responseData);
+      return { 
+        success: false, 
+        error: true, 
+        message: responseData.error || "Failed to create teacher",
+        details: responseData
+      };
+    }
 
     return { success: true, error: false };
   } catch (err) {
-    // Log the full error object for debugging
     console.error("Error creating teacher:", err);
-
-    // Log the specific errors returned by Clerk
-    if ((err as any).errors) {
-      console.error("Clerk API errors:", (err as any).errors);
-    }
-
-    return { success: false, error: true };
+    return { 
+      success: false, 
+      error: true, 
+      message: err instanceof Error ? err.message : "Unknown error" 
+    };
   }
 };
 
@@ -188,46 +234,89 @@ export const updateTeacher = async (
   currentState: CurrentState,
   data: TeacherSchema
 ) => {
-  if (!data.id) {
-    return { success: false, error: true };
-  }
   try {
-    const client = await clerkClient();
-    const user = await client.users.updateUser(data.id, {
-      username: data.username,
-      ...(data.password !== "" && { password: data.password }),
-      firstName: data.name,
-      lastName: data.surname,
+    // Log the data received by the server action
+    console.log("updateTeacher received data:", JSON.stringify(data, null, 2));
+    
+    if (!data.id) {
+      console.error("Missing teacher ID");
+      return { 
+        success: false, 
+        error: true, 
+        message: "Missing teacher ID" 
+      };
+    }
+    
+    // Ensure all required fields are present
+    const requiredFields = ["username", "name", "surname", "birthday", "bloodType", "sex"];
+    const missingFields = [];
+    
+    for (const field of requiredFields) {
+      if (data[field as keyof TeacherSchema] === undefined || 
+          data[field as keyof TeacherSchema] === null || 
+          data[field as keyof TeacherSchema] === "") {
+        missingFields.push(field);
+      }
+    }
+    
+    if (missingFields.length > 0) {
+      console.error(`Missing required fields: ${missingFields.join(', ')}`);
+      return { 
+        success: false, 
+        error: true, 
+        message: `Missing required fields: ${missingFields.join(', ')}`,
+        receivedData: Object.keys(data)
+      };
+    }
+    
+    // Create a copy of the data for formatting
+    const formattedData = { ...data };
+    
+    // Set default values for optional fields
+    formattedData.address = formattedData.address || "";
+    formattedData.bloodType = formattedData.bloodType || "";
+    formattedData.sex = formattedData.sex || "MALE";
+    
+    // Convert email and phone to undefined if they're null
+    // This avoids type errors with the API
+    if (formattedData.email === null) formattedData.email = undefined;
+    if (formattedData.phone === null) formattedData.phone = undefined;
+    
+    // Handle subjects array
+    if (formattedData.subjects && !Array.isArray(formattedData.subjects)) {
+      formattedData.subjects = [];
+    }
+    
+    console.log("Formatted data being sent to API:", JSON.stringify(formattedData, null, 2));
+    
+    const response = await fetch("http://localhost:3000/api/teachers", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(formattedData),
     });
 
-    await prisma.teacher.update({
-      where: {
-        id: data.id,
-      },
-      data: {
-        ...(data.password !== "" && { password: data.password }),
-        username: data.username,
-        name: data.name,
-        surname: data.surname,
-        email: data.email || null,
-        phone: data.phone || null,
-        address: data.address,
-        img: data.img || null,
-        bloodType: data.bloodType,
-        sex: data.sex,
-        birthday: data.birthday,
-        subjects: {
-          set: data.subjects?.map((subjectId: string) => ({
-            id: parseInt(subjectId),
-          })),
-        },
-      },
-    });
-    // revalidatePath("/list/teachers");
+    const responseData = await response.json();
+    console.log("API response:", responseData);
+    
+    if (!response.ok) {
+      console.error("API Error:", responseData);
+      return { 
+        success: false, 
+        error: true, 
+        message: responseData.error || "Failed to update teacher",
+        details: responseData
+      };
+    }
+
+    revalidatePath("/list/teachers");
     return { success: true, error: false };
   } catch (err) {
-    console.log(err);
-    return { success: false, error: true };
+    console.error("Error updating teacher:", err);
+    return { 
+      success: false, 
+      error: true, 
+      message: err instanceof Error ? err.message : "Unknown error" 
+    };
   }
 };
 
@@ -237,16 +326,17 @@ export const deleteTeacher = async (
 ) => {
   const id = data.get("id") as string;
   try {
-    const client = await clerkClient();
-    await client.users.deleteUser(id);
-
-    await prisma.teacher.delete({
-      where: {
-        id: id,
-      },
+    const response = await fetch(`http://localhost:3000/api/teachers?id=${id}`, {
+      method: "DELETE",
     });
 
-    // revalidatePath("/list/teachers");
+    if (!response.ok) {
+      const errorResponse = await response.json();
+      console.error("API Error:", errorResponse);
+      throw new Error(errorResponse.error || "Failed to delete teacher");
+    }
+
+    revalidatePath("/list/teachers");
     return { success: true, error: false };
   } catch (err) {
     console.log(err);
@@ -259,108 +349,159 @@ export const createStudent = async (
   data: StudentSchema
 ) => {
   try {
-    // Check class capacity
-    const classItem = await prisma.class.findUnique({
-      where: { id: data.classId },
-      include: { _count: { select: { students: true } } },
+    // Log the data received by the server action
+    console.log("createStudent received data:", JSON.stringify(data, null, 2));
+    
+    // Ensure all required fields are present
+    const requiredFields = ["username", "name", "surname", "birthday", "password", "bloodType", "sex", "classId", "parentId"];
+    const missingFields = [];
+    
+    for (const field of requiredFields) {
+      if (data[field as keyof StudentSchema] === undefined || 
+          data[field as keyof StudentSchema] === null || 
+          data[field as keyof StudentSchema] === "") {
+        missingFields.push(field);
+      }
+    }
+    
+    if (missingFields.length > 0) {
+      console.error(`Missing required fields: ${missingFields.join(', ')}`);
+      return { 
+        success: false, 
+        error: true, 
+        message: `Missing required fields: ${missingFields.join(', ')}`,
+        receivedData: Object.keys(data)
+      };
+    }
+    
+    // Create a copy of the data for formatting
+    const formattedData = { ...data };
+    
+    // Set default values for optional fields
+    formattedData.address = formattedData.address || "";
+    formattedData.bloodType = formattedData.bloodType || "";
+    formattedData.sex = formattedData.sex || "MALE";
+    
+    // Convert email and phone to undefined if they're null
+    // This avoids type errors with the API
+    if (formattedData.email === null) formattedData.email = undefined;
+    if (formattedData.phone === null) formattedData.phone = undefined;
+    
+    console.log("Formatted data being sent to API:", JSON.stringify(formattedData, null, 2));
+    
+    const response = await fetch("http://localhost:3000/api/students", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(formattedData),
     });
 
-    if (classItem && classItem.capacity <= classItem._count.students) {
-      return { success: false, error: true, message: "Class is full" };
+    const responseData = await response.json();
+    console.log("API response:", responseData);
+    
+    if (!response.ok) {
+      console.error("API Error:", responseData);
+      return { 
+        success: false, 
+        error: true, 
+        message: responseData.error || "Failed to create student",
+        details: responseData
+      };
     }
 
-    // Log data being sent to Clerk
-    console.log("Data being sent to Clerk:", data);
-
-    // Create user in Clerk
-    const client = await clerkClient();
-    const user = await client.users.createUser({
-      username: data.username,
-      password: data.password,
-      firstName: data.name,
-      lastName: data.surname,
-      publicMetadata: { role: "student" },
-    });
-
-    console.log("User created in Clerk:", user);
-
-    // Create student in Prisma
-    await prisma.student.create({
-      data: {
-        id: user.id,
-        username: data.username,
-        name: data.name,
-        surname: data.surname,
-        email: data.email || null,
-        phone: data.phone || null,
-        address: data.address,
-        img: data.img || null,
-        bloodType: data.bloodType,
-        sex: data.sex,
-        birthday: data.birthday,
-        gradeId: data.gradeId,
-        classId: data.classId,
-        parentId: data.parentId,
-      },
-    });
-
-    // Revalidate path (if using Next.js caching)
-    // revalidatePath("/list/students");
-
+    revalidatePath("/list/students");
     return { success: true, error: false };
   } catch (err) {
     console.error("Error creating student:", err);
-
-    // Log Clerk-specific errors
-    if ((err as any).errors) {
-      console.error("Clerk API errors:", (err as any).errors);
-    }
-
-    return { success: false, error: true, message: (err instanceof Error ? err.message : "An error occurred") };
+    return { 
+      success: false, 
+      error: true, 
+      message: err instanceof Error ? err.message : "Unknown error" 
+    };
   }
 };
+
 export const updateStudent = async (
   currentState: CurrentState,
   data: StudentSchema
 ) => {
-  if (!data.id) {
-    return { success: false, error: true };
-  }
   try {
-    const client = await clerkClient();
-    const user = await client.users.updateUser(data.id, {
-      username: data.username,
-      ...(data.password !== "" && { password: data.password }),
-      firstName: data.name,
-      lastName: data.surname,
+    // Log the data received by the server action
+    console.log("updateStudent received data:", JSON.stringify(data, null, 2));
+    
+    if (!data.id) {
+      console.error("Missing student ID");
+      return { 
+        success: false, 
+        error: true, 
+        message: "Missing student ID" 
+      };
+    }
+    
+    // Ensure all required fields are present
+    const requiredFields = ["username", "name", "surname", "birthday", "bloodType", "sex", "classId", "parentId"];
+    const missingFields = [];
+    
+    for (const field of requiredFields) {
+      if (data[field as keyof StudentSchema] === undefined || 
+          data[field as keyof StudentSchema] === null || 
+          data[field as keyof StudentSchema] === "") {
+        missingFields.push(field);
+      }
+    }
+    
+    if (missingFields.length > 0) {
+      console.error(`Missing required fields: ${missingFields.join(', ')}`);
+      return { 
+        success: false, 
+        error: true, 
+        message: `Missing required fields: ${missingFields.join(', ')}`,
+        receivedData: Object.keys(data)
+      };
+    }
+    
+    // Create a copy of the data for formatting
+    const formattedData = { ...data };
+    
+    // Set default values for optional fields
+    formattedData.address = formattedData.address || "";
+    formattedData.bloodType = formattedData.bloodType || "";
+    formattedData.sex = formattedData.sex || "MALE";
+    
+    // Convert email and phone to undefined if they're null
+    // This avoids type errors with the API
+    if (formattedData.email === null) formattedData.email = undefined;
+    if (formattedData.phone === null) formattedData.phone = undefined;
+    
+    console.log("Formatted data being sent to API:", JSON.stringify(formattedData, null, 2));
+    
+    const response = await fetch("http://localhost:3000/api/students", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(formattedData),
     });
 
-    await prisma.student.update({
-      where: {
-        id: data.id,
-      },
-      data: {
-        ...(data.password !== "" && { password: data.password }),
-        username: data.username,
-        name: data.name,
-        surname: data.surname,
-        email: data.email || null,
-        phone: data.phone || null,
-        address: data.address,
-        img: data.img || null,
-        bloodType: data.bloodType,
-        sex: data.sex,
-        birthday: data.birthday,
-        gradeId: data.gradeId,
-        classId: data.classId,
-        parentId: data.parentId,
-      },
-    });
-    // revalidatePath("/list/students");
+    const responseData = await response.json();
+    console.log("API response:", responseData);
+    
+    if (!response.ok) {
+      console.error("API Error:", responseData);
+      return { 
+        success: false, 
+        error: true, 
+        message: responseData.error || "Failed to update student",
+        details: responseData
+      };
+    }
+
+    revalidatePath("/list/students");
     return { success: true, error: false };
   } catch (err) {
-    console.log(err);
-    return { success: false, error: true };
+    console.error("Error updating student:", err);
+    return { 
+      success: false, 
+      error: true, 
+      message: err instanceof Error ? err.message : "Unknown error" 
+    };
   }
 };
 
@@ -370,53 +511,42 @@ export const deleteStudent = async (
 ) => {
   const id = data.get("id") as string;
   try {
-    const client = await clerkClient();
-    await client.users.deleteUser(id);
-
-    await prisma.student.delete({
-      where: {
-        id: id,
-      },
+    const response = await fetch(`http://localhost:3000/api/students?id=${id}`, {
+      method: "DELETE",
     });
 
-    // revalidatePath("/list/students");
+    if (!response.ok) {
+      const errorResponse = await response.json();
+      console.error("API Error:", errorResponse);
+      throw new Error(errorResponse.error || "Failed to delete student");
+    }
+
+    revalidatePath("/list/students");
     return { success: true, error: false };
   } catch (err) {
     console.log(err);
     return { success: false, error: true };
   }
 };
+
 export const createExam = async (
   currentState: CurrentState,
   data: ExamSchema
 ) => {
-  // const { userId, sessionClaims } = auth();
-  // const role = (sessionClaims?.metadata as { role?: string })?.role;
-
   try {
-    // if (role === "teacher") {
-    //   const teacherLesson = await prisma.lesson.findFirst({
-    //     where: {
-    //       teacherId: userId!,
-    //       id: data.lessonId,
-    //     },
-    //   });
-
-    //   if (!teacherLesson) {
-    //     return { success: false, error: true };
-    //   }
-    // }
-
-    await prisma.exam.create({
-      data: {
-        title: data.title,
-        startTime: data.startTime,
-        endTime: data.endTime,
-        lessonId: data.lessonId,
-      },
+    const response = await fetch("http://localhost:3000/api/exams", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
     });
 
-    // revalidatePath("/list/subjects");
+    if (!response.ok) {
+      const errorResponse = await response.json();
+      console.error("API Error:", errorResponse);
+      throw new Error(errorResponse.error || "Failed to create exam");
+    }
+
+    revalidatePath("/list/exams");
     return { success: true, error: false };
   } catch (err) {
     console.log(err);
@@ -428,36 +558,20 @@ export const updateExam = async (
   currentState: CurrentState,
   data: ExamSchema
 ) => {
-  // const { userId, sessionClaims } = auth();
-  // const role = (sessionClaims?.metadata as { role?: string })?.role;
-
   try {
-    // if (role === "teacher") {
-    //   const teacherLesson = await prisma.lesson.findFirst({
-    //     where: {
-    //       teacherId: userId!,
-    //       id: data.lessonId,
-    //     },
-    //   });
-
-    //   if (!teacherLesson) {
-    //     return { success: false, error: true };
-    //   }
-    // }
-
-    await prisma.exam.update({
-      where: {
-        id: data.id,
-      },
-      data: {
-        title: data.title,
-        startTime: data.startTime,
-        endTime: data.endTime,
-        lessonId: data.lessonId,
-      },
+    const response = await fetch("http://localhost:3000/api/exams", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
     });
 
-    // revalidatePath("/list/subjects");
+    if (!response.ok) {
+      const errorResponse = await response.json();
+      console.error("API Error:", errorResponse);
+      throw new Error(errorResponse.error || "Failed to update exam");
+    }
+
+    revalidatePath("/list/exams");
     return { success: true, error: false };
   } catch (err) {
     console.log(err);
@@ -470,19 +584,18 @@ export const deleteExam = async (
   data: FormData
 ) => {
   const id = data.get("id") as string;
-
-  // const { userId, sessionClaims } = auth();
-  // const role = (sessionClaims?.metadata as { role?: string })?.role;
-
   try {
-    await prisma.exam.delete({
-      where: {
-        id: parseInt(id),
-        // ...(role === "teacher" ? { lesson: { teacherId: userId! } } : {}),
-      },
+    const response = await fetch(`http://localhost:3000/api/exams?id=${id}`, {
+      method: "DELETE",
     });
 
-    // revalidatePath("/list/subjects");
+    if (!response.ok) {
+      const errorResponse = await response.json();
+      console.error("API Error:", errorResponse);
+      throw new Error(errorResponse.error || "Failed to delete exam");
+    }
+
+    revalidatePath("/list/exams");
     return { success: true, error: false };
   } catch (err) {
     console.log(err);
