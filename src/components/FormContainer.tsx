@@ -73,15 +73,64 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
         });
         relatedData = { classes: studentClasses, grades: studentGrades };
         break;
-        case "exam":
-          const examLessons = await prisma.lesson.findMany({
-            where: {
-              ...(role === "teacher" ? { teacherId: currentUserId! } : {}),
+      case "parent":
+        // Fetch all students for parent form
+        const parentStudents = await prisma.student.findMany({
+          select: {
+            id: true,
+            name: true,
+            surname: true,
+            class: {
+              select: {
+                name: true,
+              },
             },
-            select: { id: true, name: true },
+          },
+          orderBy: {
+            name: 'asc',
+          },
+        });
+        
+        console.log("Fetched students for parent form:", parentStudents.length);
+        
+        // If updating, fetch the current parent's students
+        let currentParentStudents = [];
+        if (type === "update" && data?.id) {
+          const parentWithStudents = await prisma.parent.findUnique({
+            where: { id: data.id },
+            include: {
+              students: {
+                select: {
+                  id: true,
+                },
+              },
+            },
           });
-          relatedData = { lessons: examLessons };
-          break;
+          
+          if (parentWithStudents) {
+            currentParentStudents = parentWithStudents.students.map(s => s.id);
+          }
+        }
+        
+        relatedData = { 
+          students: parentStudents,
+          currentParentStudents,
+        };
+        
+        console.log("Related data for parent form:", {
+          studentsCount: parentStudents.length,
+          currentParentStudentsCount: currentParentStudents.length
+        });
+        break;
+      case "exam":
+        const examLessons = await prisma.lesson.findMany({
+          where: {
+            ...(role === "teacher" ? { teacherId: currentUserId! } : {}),
+          },
+          select: { id: true, name: true },
+        });
+        relatedData = { lessons: examLessons };
+        break;
 
       default:
         break;

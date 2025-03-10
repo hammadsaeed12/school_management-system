@@ -51,8 +51,10 @@ const ClassForm = dynamic(() => import("./Forms/ClassForm"), {
 const ExamForm = dynamic(() => import("./Forms/ExamForm"), {
   loading: () => <h1>Loading...</h1>,
 });
-// const ParentForm = dynamic(() => import("./Forms/ParentForm"));
-// const ClassForm = dynamic(() => import("./Forms/ClassForm"));
+const ParentForm = dynamic(() => import("./Forms/ParentForm"), {
+  loading: () => <h1>Loading...</h1>,
+});
+// const LessonForm = dynamic(() => import("./Forms/LessonForm"));
 // // const SubjectForm = dynamic(() => import("./Forms/SubjectForm"));
 // const LessonForm = dynamic(() => import("./Forms/LessonForm"));
 // const ExamForm = dynamic(() => import("./Forms/ExamForm"));
@@ -110,9 +112,14 @@ const forms: {
       relatedData={relatedData}
     />
   ),
-  // parent: (setOpen, type, data) => (
-  //   <ParentForm type={type} data={data} setOpen={setOpen} />
-  // ),
+  parent: (setOpen, type, data, relatedData) => (
+    <ParentForm
+      type={type}
+      data={data}
+      setOpen={setOpen}
+      relatedData={relatedData}
+    />
+  ),
 };
 const FormModal = ({
   table,

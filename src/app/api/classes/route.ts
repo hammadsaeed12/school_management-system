@@ -6,9 +6,11 @@ const prisma = new PrismaClient();
 export async function POST(req: Request) {
   try {
     const data = await req.json();
+    
+    console.log("API received POST payload:", JSON.stringify(data, null, 2));
 
     // Validate required fields
-    const requiredFields = ["name", "capacity"];
+    const requiredFields = ["name", "capacity", "gradeId"];
     for (const field of requiredFields) {
       if (!data[field]) {
         return NextResponse.json(
@@ -23,8 +25,12 @@ export async function POST(req: Request) {
       data: {
         name: data.name,
         capacity: parseInt(data.capacity),
+        gradeId: parseInt(data.gradeId),
+        supervisorId: data.supervisorId || null,
       },
     });
+
+    console.log("Class created:", classItem);
 
     return NextResponse.json({ success: true, id: classItem.id });
   } catch (err) {
@@ -40,6 +46,8 @@ export async function POST(req: Request) {
 export async function PUT(req: Request) {
   try {
     const data = await req.json();
+    
+    console.log("API received PUT payload:", JSON.stringify(data, null, 2));
 
     // Validate required fields
     if (!data.id) {
@@ -49,16 +57,31 @@ export async function PUT(req: Request) {
       );
     }
 
+    // Validate required fields
+    const requiredFields = ["name", "capacity", "gradeId"];
+    for (const field of requiredFields) {
+      if (!data[field]) {
+        return NextResponse.json(
+          { success: false, error: `Missing required field: ${field}` },
+          { status: 400 }
+        );
+      }
+    }
+
     // Update the class in the database
     await prisma.class.update({
       where: {
-        id: data.id,
+        id: parseInt(data.id),
       },
       data: {
         name: data.name,
         capacity: parseInt(data.capacity),
+        gradeId: parseInt(data.gradeId),
+        supervisorId: data.supervisorId || null,
       },
     });
+
+    console.log("Class updated:", { id: data.id });
 
     return NextResponse.json({ success: true });
   } catch (err) {

@@ -33,6 +33,7 @@ model Student {
   attendances Attendance[]
   results     Result[]
   birthday    DateTime
+  User        User[]
 }
 
 model Teacher {
@@ -56,15 +57,17 @@ model Teacher {
 }
 
 model Parent {
-  id        String    @id
+  id        String    @id @default(uuid())
   username  String    @unique
   name      String
   surname   String
   email     String?   @unique
   phone     String    @unique
   address   String
+  img       String?
   createdAt DateTime  @default(now())
   students  Student[]
+  User      User[]
 }
 
 model Grade {
@@ -200,4 +203,8 @@ model User {
   role      String   // e.g., "teacher", "admin", "student", "parent"
   teacherId String?  // Link to the Teacher table
   teacher   Teacher? @relation(fields: [teacherId], references: [id])
+  studentId String?  // Link to the Student table
+  student   Student? @relation(fields: [studentId], references: [id])
+  parentId  String?  // Link to the Parent table
+  parent    Parent?  @relation(fields: [parentId], references: [id])
 }
