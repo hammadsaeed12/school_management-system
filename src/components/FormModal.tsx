@@ -16,6 +16,7 @@ import {
   deleteStudent,
   deleteSubject,
   deleteTeacher,
+  deleteParent,
 } from "@/lib/actions";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
@@ -27,6 +28,38 @@ const deleteActionMap = {
   teacher: deleteTeacher,
   student: deleteStudent,
   exam: deleteExam,
+  parent: deleteParent,
+  // For tables without specific delete functions, use a generic handler
+  // parent: async (currentState: any, data: FormData) => {
+  //   const id = data.get("id") as string;
+  //   try {
+  //     const response = await fetch(`http://localhost:3000/api/parents?id=${id}`, {
+  //       method: "DELETE",
+  //     });
+  //     
+  //     const responseData = await response.json();
+  //     
+  //     if (!response.ok) {
+  //       return { 
+  //         success: false, 
+  //         error: true, 
+  //         message: responseData.error || "Failed to delete parent" 
+  //       };
+  //     }
+  //     
+  //     return { 
+  //       success: true, 
+  //       error: false, 
+  //       message: "Parent deleted successfully!" 
+  //     };
+  //   } catch (err) {
+  //     return { 
+  //       success: false, 
+  //       error: true, 
+  //       message: err instanceof Error ? err.message : "Unknown error" 
+  //     };
+  //   }
+  // },
   // parent: deleteSubject,
   // lesson: deleteSubject,
   // assignment: deleteSubject,
@@ -137,31 +170,58 @@ const FormModal = ({
       : "bg-lamaPurple";
   const [open, setOpen] = useState(false);
   const Form = () => {
-    const [state, formAction] = useActionState(
-      deleteActionMap[table as keyof typeof deleteActionMap],
-      {
-        success: false,
-        error: false,
-      }
-    );
-
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const router = useRouter();
-
+    
+    // Use useEffect for any client-side only initialization
     useEffect(() => {
-      if (state.success) {
-        toast(`${table} has been deleted!`);
-        setOpen(false);
-        router.refresh();
+      // This code only runs on the client, avoiding hydration mismatch
+    }, []);
+
+    const handleDelete = async (e: React.FormEvent) => {
+      e.preventDefault();
+      setIsSubmitting(true);
+      setError(null);
+      
+      try {
+        const formData = new FormData();
+        formData.append("id", id?.toString() || "");
+        
+        const deleteAction = deleteActionMap[table as keyof typeof deleteActionMap];
+        const result = await deleteAction({ success: false, error: false }, formData);
+        
+        console.log("Delete action result:", result);
+        
+        if (result.success) {
+          toast(`${table} has been deleted!`);
+          setOpen(false);
+          router.refresh();
+        } else if (result.error) {
+          setError(result.message || "Something went wrong!");
+        }
+      } catch (err) {
+        console.error("Error deleting item:", err);
+        setError("An unexpected error occurred");
+      } finally {
+        setIsSubmitting(false);
       }
-    }, [state]);
+    };
 
     return type === "delete" && id ? (
-      <form action={formAction} className="p-4 flex flex-col gap-4">
-        <input type="text | number" name="id" value={id} hidden />
+      <form onSubmit={handleDelete} className="p-4 flex flex-col gap-4">
+        <input type="hidden" name="id" value={id} />
         <span className="text-center font-medium">
-          All data will be lost. Are you sure you want to delte this {table}?
+          All data will be lost. Are you sure you want to delete this {table}?
         </span>
-        <button className="bg-red-700 text-white py-2 px-4 rounded-md border-none w-max self-center">
+        {error && (
+          <span className="text-red-500">{error}</span>
+        )}
+        <button 
+          className="bg-red-700 text-white py-2 px-4 rounded-md border-none w-max self-center disabled:bg-red-300"
+          disabled={isSubmitting}
+          type="submit"
+        >
           Delete
         </button>
       </form>

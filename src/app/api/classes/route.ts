@@ -68,10 +68,25 @@ export async function PUT(req: Request) {
       }
     }
 
+    // Convert ID to number
+    const classId = typeof data.id === 'string' ? parseInt(data.id) : data.id;
+    
+    // Check if the class exists
+    const existingClass = await prisma.class.findUnique({
+      where: { id: classId }
+    });
+    
+    if (!existingClass) {
+      return NextResponse.json(
+        { success: false, error: `Class with ID ${classId} not found` },
+        { status: 404 }
+      );
+    }
+
     // Update the class in the database
-    await prisma.class.update({
+    const updatedClass = await prisma.class.update({
       where: {
-        id: parseInt(data.id),
+        id: classId,
       },
       data: {
         name: data.name,
@@ -81,7 +96,7 @@ export async function PUT(req: Request) {
       },
     });
 
-    console.log("Class updated:", { id: data.id });
+    console.log("Class updated:", updatedClass);
 
     return NextResponse.json({ success: true });
   } catch (err) {
@@ -99,6 +114,8 @@ export async function DELETE(req: Request) {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
 
+    console.log("API received DELETE request for class ID:", id);
+
     if (!id) {
       return NextResponse.json(
         { success: false, error: "Missing class ID" },
@@ -106,9 +123,24 @@ export async function DELETE(req: Request) {
       );
     }
 
+    // Convert ID to number
+    const classId = parseInt(id);
+    
+    // Check if the class exists
+    const existingClass = await prisma.class.findUnique({
+      where: { id: classId }
+    });
+    
+    if (!existingClass) {
+      return NextResponse.json(
+        { success: false, error: `Class with ID ${classId} not found` },
+        { status: 404 }
+      );
+    }
+
     // Check if there are students in this class
     const studentsCount = await prisma.student.count({
-      where: { classId: id },
+      where: { classId: classId },
     });
 
     if (studentsCount > 0) {
@@ -119,9 +151,11 @@ export async function DELETE(req: Request) {
     }
 
     // Delete the class
-    await prisma.class.delete({
-      where: { id },
+    const deletedClass = await prisma.class.delete({
+      where: { id: classId },
     });
+
+    console.log("Class deleted:", deletedClass);
 
     return NextResponse.json({ success: true });
   } catch (err) {

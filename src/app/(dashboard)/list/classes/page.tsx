@@ -4,11 +4,14 @@ import Table from "@/components/Table";
 import TableSearch from "@/components/TableSearch";
 import prisma from "@/lib/prisma";
 import { ITEM_PER_PAGE } from "@/lib/setting";
-import { Class, Prisma, Teacher } from "@prisma/client";
+import { Class, Prisma, Teacher, Grade } from "@prisma/client";
 import Image from "next/image";
 import { auth } from "@clerk/nextjs/server";
 
-type ClassList = Class & { supervisor: Teacher };
+type ClassList = Class & { 
+  supervisor: Teacher | null;
+  grade: Grade;
+};
 
 const ClassListPage = async ({
   searchParams,
@@ -57,9 +60,9 @@ const renderRow = (item: ClassList) => (
   >
     <td className="flex items-center gap-4 p-4">{item.name}</td>
     <td className="hidden md:table-cell">{item.capacity}</td>
-    <td className="hidden md:table-cell">{item.name[0]}</td>
+    <td className="hidden md:table-cell">Grade {item.grade.level}</td>
     <td className="hidden md:table-cell">
-      {item.supervisor.name + " " + item.supervisor.surname}
+      {item.supervisor ? `${item.supervisor.name} ${item.supervisor.surname}` : "No supervisor"}
     </td>
     <td>
       <div className="flex items-center gap-2">
@@ -104,6 +107,7 @@ const renderRow = (item: ClassList) => (
       where: query,
       include: {
         supervisor: true,
+        grade: true,
       },
       take: ITEM_PER_PAGE,
       skip: ITEM_PER_PAGE * (p - 1),

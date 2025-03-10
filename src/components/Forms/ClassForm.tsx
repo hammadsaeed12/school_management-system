@@ -11,7 +11,7 @@ import {
   createClass,
   updateClass,
 } from "@/lib/actions";
-import { useActionState, useEffect, startTransition, SetStateAction, Dispatch } from "react";
+import { useEffect, SetStateAction, Dispatch, useState } from "react";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
 
@@ -32,34 +32,57 @@ const ClassForm = ({
     formState: { errors },
   } = useForm<ClassSchema>({
     resolver: zodResolver(classSchema),
-  });
-
-  const [state, formAction] = useActionState(
-    type === "create" ? createClass : updateClass,
-    {
-      success: false,
-      error: false,
+    defaultValues: data ? {
+      ...data,
+      id: data.id,
+      name: data.name,
+      capacity: data.capacity,
+      gradeId: data.gradeId,
+      supervisorId: data.supervisorId || "",
+    } : {
+      supervisorId: "",
+      gradeId: "",
     }
-  );
-
-  const onSubmit = handleSubmit((data) => {
-    console.log(data);
-    startTransition(() => {
-      formAction(data);
-    });
   });
 
+  // Initialize state
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-
+  
+  // Use useEffect for any client-side only initialization
   useEffect(() => {
-    if (state.success) {
-      toast(`Class has been ${type === "create" ? "created" : "updated"}!`);
-      setOpen(false);
-      router.refresh();
-    }
-  }, [state, router, type, setOpen]);
+    // This code only runs on the client, avoiding hydration mismatch
+  }, []);
 
-  const { teachers, grades } = relatedData;
+  const onSubmit = handleSubmit(async (formData) => {
+    setIsSubmitting(true);
+    setError(null);
+    console.log("Form data being submitted:", formData);
+    
+    try {
+      const result = type === "create" 
+        ? await createClass({ success: false, error: false }, formData)
+        : await updateClass({ success: false, error: false }, formData);
+      
+      console.log("Action result:", result);
+      
+      if (result.success) {
+        toast(`Class has been ${type === "create" ? "created" : "updated"}!`);
+        setOpen(false);
+        router.refresh();
+      } else if (result.error) {
+        setError(result.message || "Something went wrong!");
+      }
+    } catch (err) {
+      console.error("Error submitting form:", err);
+      setError("An unexpected error occurred");
+    } finally {
+      setIsSubmitting(false);
+    }
+  });
+
+  const { teachers, grades } = relatedData || { teachers: [], grades: [] };
 
   return (
     <form className="flex flex-col gap-8" onSubmit={onSubmit}>
@@ -74,6 +97,7 @@ const ClassForm = ({
           defaultValue={data?.name}
           register={register}
           error={errors?.name}
+          required
         />
         <InputField
           label="Capacity"
@@ -81,6 +105,8 @@ const ClassForm = ({
           defaultValue={data?.capacity}
           register={register}
           error={errors?.capacity}
+          required
+          type="number"
         />
         {data && (
           <InputField
@@ -97,9 +123,10 @@ const ClassForm = ({
           <select
             className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
             {...register("supervisorId")}
-            defaultValue={data?.supervisorId}
+            defaultValue={data?.supervisorId || ""}
           >
-            {teachers.map((teacher: { id: string; name: string; surname: string }) => (
+            <option value="">No supervisor</option>
+            {teachers && teachers.map((teacher: { id: string; name: string; surname: string }) => (
               <option value={teacher.id} key={teacher.id}>
                 {teacher.name + " " + teacher.surname}
               </option>
@@ -112,13 +139,15 @@ const ClassForm = ({
           )}
         </div>
         <div className="flex flex-col gap-2 w-full md:w-1/4">
-          <label className="text-xs text-gray-500">Grade</label>
+          <label className="text-xs text-gray-500">Grade <span className="text-red-500">*</span></label>
           <select
             className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
             {...register("gradeId")}
-            defaultValue={data?.gradeId}
+            defaultValue={data?.gradeId || ""}
+            required
           >
-            {grades.map((grade: { id: number; level: number }) => (
+            <option value="">Select a grade</option>
+            {grades && grades.map((grade: { id: number; level: number }) => (
               <option value={grade.id} key={grade.id}>
                 {grade.level}
               </option>
@@ -131,10 +160,14 @@ const ClassForm = ({
           )}
         </div>
       </div>
-      {state.error && (
-        <span className="text-red-500">Something went wrong!</span>
+      {error && (
+        <span className="text-red-500">{error}</span>
       )}
-      <button className="bg-blue-400 text-white p-2 rounded-md">
+      <button 
+        className="bg-blue-400 text-white p-2 rounded-md disabled:bg-gray-300"
+        disabled={isSubmitting}
+        type="submit"
+      >
         {type === "create" ? "Create" : "Update"}
       </button>
     </form>
