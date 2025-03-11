@@ -8,7 +8,7 @@ export async function POST(req: Request) {
     const data = await req.json();
 
     // Validate required fields
-    const requiredFields = ["name", "date", "subjectId"];
+    const requiredFields = ["title", "startTime", "endTime", "lessonId"];
     for (const field of requiredFields) {
       if (!data[field]) {
         return NextResponse.json(
@@ -18,11 +18,12 @@ export async function POST(req: Request) {
       }
     }
 
-    // Validate the date field
-    const date = new Date(data.date);
-    if (isNaN(date.getTime())) {
+    // Validate the time fields
+    const startTime = new Date(data.startTime);
+    const endTime = new Date(data.endTime);
+    if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
       return NextResponse.json(
-        { success: false, error: "Invalid date format" },
+        { success: false, error: "Invalid date format for startTime or endTime" },
         { status: 400 }
       );
     }
@@ -30,9 +31,10 @@ export async function POST(req: Request) {
     // Create the exam in the database
     const exam = await prisma.exam.create({
       data: {
-        name: data.name,
-        date: date,
-        subjectId: parseInt(data.subjectId),
+        title: data.title,
+        startTime: startTime,
+        endTime: endTime,
+        lessonId: parseInt(data.lessonId),
       },
     });
 
@@ -59,11 +61,12 @@ export async function PUT(req: Request) {
       );
     }
 
-    // Validate the date field
-    const date = new Date(data.date);
-    if (isNaN(date.getTime())) {
+    // Validate the time fields
+    const startTime = new Date(data.startTime);
+    const endTime = new Date(data.endTime);
+    if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
       return NextResponse.json(
-        { success: false, error: "Invalid date format" },
+        { success: false, error: "Invalid date format for startTime or endTime" },
         { status: 400 }
       );
     }
@@ -74,9 +77,10 @@ export async function PUT(req: Request) {
         id: parseInt(data.id),
       },
       data: {
-        name: data.name,
-        date: date,
-        subjectId: parseInt(data.subjectId),
+        title: data.title,
+        startTime: startTime,
+        endTime: endTime,
+        lessonId: parseInt(data.lessonId),
       },
     });
 

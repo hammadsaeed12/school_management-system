@@ -43,7 +43,7 @@ const columns = [
   },
   {
     header: "Date",
-    accessor: "date",
+    accessor: "startTime",
     className: "hidden md:table-cell",
   },
   ...(role === "admin" || role === "teacher"
