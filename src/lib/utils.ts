@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { auth } from "./auth";
 
 export const getRole = async () => {
   try {

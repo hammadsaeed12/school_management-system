@@ -1,5 +1,5 @@
 import prisma from "@/lib/prisma";
-import { auth } from "@clerk/nextjs/server";
+import { auth } from "@/lib/auth";
 import React from "react";
 import { number } from "zod";
 
@@ -72,3 +72,4 @@ const Announcement = async () => {
 };
 
 export default Announcement;
+

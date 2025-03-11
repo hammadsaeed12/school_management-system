@@ -9,7 +9,7 @@ import { Class, Prisma, Student } from "@prisma/client";
 import Image from "next/image";
 import Link from "next/link";
 
-import { auth } from "@clerk/nextjs/server";
+import { auth } from "@/lib/auth";
 
 type StudentList = Student & { class: Class };
 

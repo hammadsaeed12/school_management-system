@@ -1,6 +1,6 @@
 import Announcements from "@/components/Announcement";
 import BigCalendarContainer from "@/components/BigCalendarContainer";
-import { auth } from "@clerk/nextjs/server";
+import { auth } from "@/lib/auth";
 
 const TeacherPage = async () => {
   const { userId } =await auth();

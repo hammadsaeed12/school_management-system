@@ -7,7 +7,7 @@ import { Class, Prisma, Subject, Teacher } from "@prisma/client";
 import Image from "next/image";
 import Link from "next/link";
 import { ITEM_PER_PAGE } from "@/lib/setting";
-import { auth } from "@clerk/nextjs/server";
+import { auth } from "@/lib/auth";
 
 type TeacherList = Teacher & { subjects: Subject[] } & { classes: Class[] };
 
