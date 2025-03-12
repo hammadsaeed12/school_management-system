@@ -7,6 +7,7 @@ import React, {
   useActionState,
   useEffect,
   useState,
+  useTransition,
 } from "react";
 import Image from "next/image";
 import dynamic from "next/dynamic";
@@ -170,7 +171,7 @@ const FormModal = ({
       : "bg-lamaPurple";
   const [open, setOpen] = useState(false);
   const Form = () => {
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isPending, startTransition] = useTransition();
     const [error, setError] = useState<string | null>(null);
     const router = useRouter();
     
@@ -181,7 +182,6 @@ const FormModal = ({
 
     const handleDelete = async (e: React.FormEvent) => {
       e.preventDefault();
-      setIsSubmitting(true);
       setError(null);
       
       try {
@@ -189,22 +189,23 @@ const FormModal = ({
         formData.append("id", id?.toString() || "");
         
         const deleteAction = deleteActionMap[table as keyof typeof deleteActionMap];
-        const result = await deleteAction({ success: false, error: false }, formData);
         
-        console.log("Delete action result:", result);
-        
-        if (result.success) {
-          toast(`${table} has been deleted!`);
-          setOpen(false);
-          router.refresh();
-        } else if (result.error) {
-          setError(result.message || "Something went wrong!");
-        }
+        startTransition(async () => {
+          const result = await deleteAction({ success: false, error: false }, formData);
+          
+          console.log("Delete action result:", result);
+          
+          if (result.success) {
+            toast(`${table} has been deleted!`);
+            setOpen(false);
+            router.refresh();
+          } else if (result.error) {
+            setError(result.message || "Something went wrong!");
+          }
+        });
       } catch (err) {
         console.error("Error deleting item:", err);
         setError("An unexpected error occurred");
-      } finally {
-        setIsSubmitting(false);
       }
     };
 
@@ -219,10 +220,10 @@ const FormModal = ({
         )}
         <button 
           className="bg-red-700 text-white py-2 px-4 rounded-md border-none w-max self-center disabled:bg-red-300"
-          disabled={isSubmitting}
+          disabled={isPending}
           type="submit"
         >
-          Delete
+          {isPending ? "Deleting..." : "Delete"}
         </button>
       </form>
     ) : type === "create" || type === "update" ? (

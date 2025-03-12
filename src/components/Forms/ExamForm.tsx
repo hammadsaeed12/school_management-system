@@ -3,15 +3,16 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import React, {
   Dispatch,
   SetStateAction,
-  useActionState,
   useEffect,
   useTransition,
 } from "react";
+import { useFormState } from "react-dom";
 import { useForm } from "react-hook-form";
 import InputField from "../InputField";
 import { createExam, updateExam } from "@/lib/actions";
 import { examSchema, ExamSchema} from "@/lib/formValidationSchema";
 import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { useRouter } from "next/navigation";
 
 const ExamForm = ({
@@ -34,16 +35,18 @@ const ExamForm = ({
   });
 
   const [isPending, startTransition] = useTransition();
-  const [state, formAction] = useActionState(
+  const [state, formAction] = useFormState(
     type === "create" ? createExam : updateExam,
     {
       success: false,
       error: false,
+      message: ""
     }
   );
-  const onSubmit = handleSubmit((data) => {
+
+  const onSubmit = handleSubmit((formData) => {
     startTransition(() => {
-      formAction(data);
+      formAction(formData);
     });
   });
 
@@ -51,11 +54,21 @@ const ExamForm = ({
 
   useEffect(() => {
     if (state.success) {
-      toast(`Exam has been ${type === "create" ? "created" : "updated"}!`);
+      toast.success(state.message || `Exam has been ${type === "create" ? "created" : "updated"}!`, {
+        position: "bottom-right",
+        autoClose: 3000,
+        theme: "dark"
+      });
       setOpen(false);
       router.refresh();
+    } else if (state.error && state.message) {
+      toast.error(state.message, {
+        position: "bottom-right",
+        autoClose: 3000,
+        theme: "dark"
+      });
     }
-  }, [state]);
+  }, [state, type, setOpen, router]);
 
   const {lessons} = relatedData;
 
@@ -104,7 +117,7 @@ const ExamForm = ({
           <select
             className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full"
             {...register("lessonId")}
-            defaultValue={data?.teachers}
+            defaultValue={data?.lessonId}
           >
             {lessons.map((lesson: { id: number; name: string }) => (
               <option value={lesson.id} key={lesson.id}>
@@ -119,14 +132,23 @@ const ExamForm = ({
           )}
         </div>
       </div>
-      {state.error && (
-        <span className="text-red-500">Something went wrong!</span>
+      {state.error && state.message && (
+        <span className="text-red-500">{state.message}</span>
       )}
-      <button className="bg-blue-400 text-white p-2 rounded-md">
-        {type === "create" ? "Create" : "Update"}
+      <button 
+        className="bg-blue-400 text-white p-2 rounded-md"
+        disabled={isPending}
+      >
+        {isPending 
+          ? "Processing..." 
+          : type === "create"
+            ? "Create Exam"
+            : "Update Exam"
+        }
       </button>
     </form>
   );
 };
 
 export default ExamForm;
+

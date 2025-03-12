@@ -6,6 +6,7 @@ import React, {
   startTransition,
   useEffect,
   useState,
+  useTransition,
 } from "react";
 import Image from "next/image";
 import { useForm } from "react-hook-form";
@@ -69,14 +70,13 @@ const TeacherForm = ({
 
   const [img, setImg] = useState<any>(data?.img ? { secure_url: data.img } : null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const [formSuccess, setFormSuccess] = useState(false);
   
   const router = useRouter();
 
   const onSubmit = handleSubmit(async (formData) => {
     setErrorMessage(null);
-    setIsSubmitting(true);
     
     // Log the form data for debugging
     console.log("Form data being submitted:", formData);
@@ -98,7 +98,6 @@ const TeacherForm = ({
     
     if (missingFields.length > 0) {
       setErrorMessage(`Missing required fields: ${missingFields.join(', ')}`);
-      setIsSubmitting(false);
       return;
     }
     
@@ -127,30 +126,30 @@ const TeacherForm = ({
     
     console.log("Formatted data being sent to server:", formattedData);
     
-    try {
-      let result: ActionResult;
-      if (type === "create") {
-        result = await createTeacher(formattedData);
-      } else {
-        result = await updateTeacher({ success: false, error: false }, formattedData);
+    startTransition(async () => {
+      try {
+        let result: ActionResult;
+        if (type === "create") {
+          result = await createTeacher(formattedData);
+        } else {
+          result = await updateTeacher({ success: false, error: false }, formattedData);
+        }
+        
+        console.log("Action result:", result);
+        
+        if (result.success) {
+          toast(`Teacher has been ${type === "create" ? "created" : "updated"}!`);
+          setFormSuccess(true);
+          setOpen(false);
+          router.refresh();
+        } else {
+          setErrorMessage(result.message || "Something went wrong!");
+        }
+      } catch (error) {
+        console.error("Error submitting form:", error);
+        setErrorMessage("An unexpected error occurred");
       }
-      
-      console.log("Action result:", result);
-      
-      if (result.success) {
-        toast(`Teacher has been ${type === "create" ? "created" : "updated"}!`);
-        setFormSuccess(true);
-        setOpen(false);
-        router.refresh();
-      } else {
-        setErrorMessage(result.message || "Something went wrong!");
-      }
-    } catch (error) {
-      console.error("Error submitting form:", error);
-      setErrorMessage("An unexpected error occurred");
-    } finally {
-      setIsSubmitting(false);
-    }
+    });
   });
 
   // For debugging - watch all form values
@@ -319,9 +318,9 @@ const TeacherForm = ({
       )}
       <button 
         className="bg-blue-400 text-white p-2 rounded-md disabled:bg-gray-300"
-        disabled={isSubmitting}
+        disabled={isPending}
       >
-        {isSubmitting ? "Processing..." : (type === "create" ? "Create" : "Update")}
+        {isPending ? "Processing..." : (type === "create" ? "Create" : "Update")}
       </button>
     </form>
   );

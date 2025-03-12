@@ -4,6 +4,11 @@ import { getToken } from "next-auth/jwt";
 import { routeAccessMap } from "./lib/setting";
 
 export async function middleware(request: NextRequest) {
+  // Skip middleware for API routes
+  if (request.nextUrl.pathname.startsWith('/api/')) {
+    return NextResponse.next();
+  }
+
   const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
   
   // If user is not logged in, redirect to sign-in page

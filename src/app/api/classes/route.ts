@@ -3,6 +3,57 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+export async function GET(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+
+    if (id) {
+      // Fetch a specific class by ID
+      const classItem = await prisma.class.findUnique({
+        where: { id: parseInt(id) },
+        include: {
+          grade: true,
+          students: true,
+          teachers: true,
+        },
+      });
+
+      if (!classItem) {
+        return NextResponse.json(
+          { success: false, error: "Class not found" },
+          { status: 404 }
+        );
+      }
+
+      return NextResponse.json({ success: true, data: classItem });
+    } else {
+      // Fetch all classes
+      const classes = await prisma.class.findMany({
+        include: {
+          grade: true,
+          students: true,
+          teachers: true,
+          _count: {
+            select: {
+              students: true,
+            },
+          },
+        },
+      });
+
+      return NextResponse.json({ success: true, data: classes });
+    }
+  } catch (err) {
+    console.error("Error fetching classes:", err);
+    const errorMessage = err instanceof Error ? err.message : "Internal Server Error";
+    return NextResponse.json(
+      { success: false, error: errorMessage },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(req: Request) {
   try {
     const data = await req.json();

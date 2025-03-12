@@ -11,7 +11,7 @@ import {
   createClass,
   updateClass,
 } from "@/lib/actions";
-import { useEffect, SetStateAction, Dispatch, useState } from "react";
+import { useEffect, SetStateAction, Dispatch, useState, useTransition } from "react";
 import { toast } from "react-toastify";
 import { useRouter } from "next/navigation";
 
@@ -46,7 +46,7 @@ const ClassForm = ({
   });
 
   // Initialize state
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   
@@ -56,30 +56,30 @@ const ClassForm = ({
   }, []);
 
   const onSubmit = handleSubmit(async (formData) => {
-    setIsSubmitting(true);
     setError(null);
+    
     console.log("Form data being submitted:", formData);
     
-    try {
-      const result = type === "create" 
-        ? await createClass({ success: false, error: false }, formData)
-        : await updateClass({ success: false, error: false }, formData);
-      
-      console.log("Action result:", result);
-      
-      if (result.success) {
-        toast(`Class has been ${type === "create" ? "created" : "updated"}!`);
-        setOpen(false);
-        router.refresh();
-      } else if (result.error) {
-        setError(result.message || "Something went wrong!");
+    startTransition(async () => {
+      try {
+        const result = type === "create" 
+          ? await createClass({ success: false, error: false }, formData)
+          : await updateClass({ success: false, error: false }, formData);
+        
+        console.log("Action result:", result);
+        
+        if (result.success) {
+          toast(`Class has been ${type === "create" ? "created" : "updated"}!`);
+          setOpen(false);
+          router.refresh();
+        } else if (result.error) {
+          setError(result.message || "Something went wrong!");
+        }
+      } catch (err) {
+        console.error("Error submitting form:", err);
+        setError("An unexpected error occurred");
       }
-    } catch (err) {
-      console.error("Error submitting form:", err);
-      setError("An unexpected error occurred");
-    } finally {
-      setIsSubmitting(false);
-    }
+    });
   });
 
   const { teachers, grades } = relatedData || { teachers: [], grades: [] };
@@ -165,10 +165,10 @@ const ClassForm = ({
       )}
       <button 
         className="bg-blue-400 text-white p-2 rounded-md disabled:bg-gray-300"
-        disabled={isSubmitting}
+        disabled={isPending}
         type="submit"
       >
-        {type === "create" ? "Create" : "Update"}
+        {isPending ? "Processing..." : (type === "create" ? "Create" : "Update")}
       </button>
     </form>
   );

@@ -1,11 +1,56 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import prisma from "@/lib/prisma";
 
-const prisma = new PrismaClient();
+export async function GET(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+
+    if (id) {
+      // Fetch a specific subject by ID
+      const subject = await prisma.subject.findUnique({
+        where: { id: parseInt(id) },
+        include: {
+          teachers: true,
+          lessons: true,
+        },
+      });
+
+      if (!subject) {
+        return NextResponse.json(
+          { success: false, error: "Subject not found" },
+          { status: 404 }
+        );
+      }
+
+      return NextResponse.json({ success: true, data: subject });
+    } else {
+      // Fetch all subjects
+      const subjects = await prisma.subject.findMany({
+        include: {
+          teachers: true,
+          lessons: true,
+        },
+      });
+
+      return NextResponse.json({ success: true, data: subjects });
+    }
+  } catch (err) {
+    console.error("Error fetching subjects:", err);
+    const errorMessage = err instanceof Error ? err.message : "Internal Server Error";
+    return NextResponse.json(
+      { success: false, error: errorMessage },
+      { status: 500 }
+    );
+  }
+}
 
 export async function POST(req: Request) {
   try {
     const data = await req.json();
+    
+    // Log the incoming payload
+    console.log("API received POST payload:", JSON.stringify(data, null, 2));
 
     // Validate required fields
     if (!data.name) {
@@ -15,17 +60,41 @@ export async function POST(req: Request) {
       );
     }
 
+    // Check if a subject with the same name already exists
+    const existingSubject = await prisma.subject.findFirst({
+      where: { name: data.name }
+    });
+
+    if (existingSubject) {
+      return NextResponse.json(
+        { success: false, error: `A subject with name '${data.name}' already exists` },
+        { status: 400 }
+      );
+    }
+
+    // Create the subject data object
+    const subjectData = {
+      name: data.name,
+    };
+
+    // Add teachers if provided
+    if (data.teachers && Array.isArray(data.teachers) && data.teachers.length > 0) {
+      subjectData.teachers = {
+        connect: data.teachers.map((teacherId: string) => ({ id: teacherId })),
+      };
+    }
+
     // Create the subject in the database
     const subject = await prisma.subject.create({
-      data: {
-        name: data.name,
-        teachers: {
-          connect: data.teachers?.map((teacherId: string) => ({ id: teacherId })) || [],
-        },
+      data: subjectData,
+      include: {
+        teachers: true,
       },
     });
 
-    return NextResponse.json({ success: true, id: subject.id });
+    console.log("Subject created:", subject);
+
+    return NextResponse.json({ success: true, data: subject });
   } catch (err) {
     console.error("Error creating subject:", err);
     const errorMessage = err instanceof Error ? err.message : "Internal Server Error";
@@ -39,6 +108,9 @@ export async function POST(req: Request) {
 export async function PUT(req: Request) {
   try {
     const data = await req.json();
+    
+    // Log the incoming payload
+    console.log("API received PUT payload:", JSON.stringify(data, null, 2));
 
     // Validate required fields
     if (!data.id) {
@@ -48,20 +120,66 @@ export async function PUT(req: Request) {
       );
     }
 
-    // Update the subject in the database
-    await prisma.subject.update({
+    if (!data.name) {
+      return NextResponse.json(
+        { success: false, error: "Missing required field: name" },
+        { status: 400 }
+      );
+    }
+
+    // Check if the subject exists
+    const existingSubject = await prisma.subject.findUnique({
+      where: { id: parseInt(data.id) }
+    });
+
+    if (!existingSubject) {
+      return NextResponse.json(
+        { success: false, error: "Subject not found" },
+        { status: 404 }
+      );
+    }
+
+    // Check if another subject with the same name exists
+    const duplicateSubject = await prisma.subject.findFirst({
       where: {
-        id: parseInt(data.id),
-      },
-      data: {
         name: data.name,
-        teachers: {
-          set: data.teachers?.map((teacherId: string) => ({ id: teacherId })) || [],
-        },
+        id: { not: parseInt(data.id) },
       },
     });
 
-    return NextResponse.json({ success: true });
+    if (duplicateSubject) {
+      return NextResponse.json(
+        { success: false, error: `Another subject with name '${data.name}' already exists` },
+        { status: 400 }
+      );
+    }
+
+    // Create the subject data object
+    const subjectData = {
+      name: data.name,
+    };
+
+    // Handle teachers update if provided
+    if (data.teachers) {
+      subjectData.teachers = {
+        set: Array.isArray(data.teachers) ? data.teachers.map((teacherId: string) => ({
+          id: teacherId,
+        })) : [],
+      };
+    }
+
+    // Update the subject in the database
+    const updatedSubject = await prisma.subject.update({
+      where: { id: parseInt(data.id) },
+      data: subjectData,
+      include: {
+        teachers: true,
+      },
+    });
+
+    console.log("Subject updated:", updatedSubject);
+
+    return NextResponse.json({ success: true, data: updatedSubject });
   } catch (err) {
     console.error("Error updating subject:", err);
     const errorMessage = err instanceof Error ? err.message : "Internal Server Error";
@@ -80,6 +198,29 @@ export async function DELETE(req: Request) {
     if (!id) {
       return NextResponse.json(
         { success: false, error: "Missing subject ID" },
+        { status: 400 }
+      );
+    }
+
+    // Check if the subject exists
+    const subject = await prisma.subject.findUnique({
+      where: { id: parseInt(id) },
+      include: {
+        lessons: true,
+      },
+    });
+
+    if (!subject) {
+      return NextResponse.json(
+        { success: false, error: "Subject not found" },
+        { status: 404 }
+      );
+    }
+
+    // Check if subject has any active lessons
+    if (subject.lessons.length > 0) {
+      return NextResponse.json(
+        { success: false, error: "Cannot delete subject with active lessons" },
         { status: 400 }
       );
     }

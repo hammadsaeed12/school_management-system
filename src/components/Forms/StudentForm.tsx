@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import InputField from "../InputField";
 import Image from "next/image";
-import { Dispatch, SetStateAction, useEffect, useState, startTransition } from "react";
+import { Dispatch, SetStateAction, useEffect, useState, useTransition } from "react";
 import {
   studentSchema,
   StudentSchema,
@@ -67,14 +67,13 @@ const StudentForm = ({
 
   const [img, setImg] = useState<any>(data?.img ? { secure_url: data.img } : null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const [formSuccess, setFormSuccess] = useState(false);
   
   const router = useRouter();
 
   const onSubmit = handleSubmit(async (formData) => {
     setErrorMessage(null);
-    setIsSubmitting(true);
     
     // Log the form data for debugging
     console.log("Form data being submitted:", formData);
@@ -96,7 +95,6 @@ const StudentForm = ({
     
     if (missingFields.length > 0) {
       setErrorMessage(`Missing required fields: ${missingFields.join(', ')}`);
-      setIsSubmitting(false);
       return;
     }
     
@@ -136,30 +134,30 @@ const StudentForm = ({
     
     console.log("Formatted data being sent to server:", formattedData);
     
-    try {
-      let result: ActionResult;
-      if (type === "create") {
-        result = await createStudent({ success: false, error: false }, formattedData);
-      } else {
-        result = await updateStudent({ success: false, error: false }, formattedData);
+    startTransition(async () => {
+      try {
+        let result: ActionResult;
+        if (type === "create") {
+          result = await createStudent({ success: false, error: false }, formattedData);
+        } else {
+          result = await updateStudent({ success: false, error: false }, formattedData);
+        }
+        
+        console.log("Action result:", result);
+        
+        if (result.success) {
+          toast(`Student has been ${type === "create" ? "created" : "updated"}!`);
+          setFormSuccess(true);
+          setOpen(false);
+          router.refresh();
+        } else {
+          setErrorMessage(result.message || "Something went wrong!");
+        }
+      } catch (error) {
+        console.error("Error submitting form:", error);
+        setErrorMessage("An unexpected error occurred");
       }
-      
-      console.log("Action result:", result);
-      
-      if (result.success) {
-        toast(`Student has been ${type === "create" ? "created" : "updated"}!`);
-        setFormSuccess(true);
-        setOpen(false);
-        router.refresh();
-      } else {
-        setErrorMessage(result.message || "Something went wrong!");
-      }
-    } catch (error) {
-      console.error("Error submitting form:", error);
-      setErrorMessage("An unexpected error occurred");
-    } finally {
-      setIsSubmitting(false);
-    }
+    });
   });
 
   // For debugging - watch all form values
@@ -341,9 +339,9 @@ const StudentForm = ({
       )}
       <button 
         className="bg-blue-400 text-white p-2 rounded-md disabled:bg-gray-300"
-        disabled={isSubmitting}
+        disabled={isPending}
       >
-        {isSubmitting ? "Processing..." : (type === "create" ? "Create" : "Update")}
+        {isPending ? "Processing..." : (type === "create" ? "Create" : "Update")}
       </button>
     </form>
   );

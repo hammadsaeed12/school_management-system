@@ -1,6 +1,6 @@
 "use client";
 import { zodResolver } from "@hookform/resolvers/zod";
-import React, { Dispatch, SetStateAction, useState } from "react";
+import React, { Dispatch, SetStateAction, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import InputField from "../InputField";
@@ -79,7 +79,7 @@ const ParentForm = ({
   });
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const [selectedStudents, setSelectedStudents] = useState<string[]>(
     relatedData?.currentParentStudents || []
   );
@@ -95,7 +95,6 @@ const ParentForm = ({
 
   const onSubmit = handleSubmit(async (formData) => {
     setErrorMessage(null);
-    setIsSubmitting(true);
     
     // Log the form data for debugging
     console.log("Form data being submitted:", formData);
@@ -117,30 +116,30 @@ const ParentForm = ({
     
     console.log("Formatted data being sent to server:", formattedData);
     
-    try {
-      // Send the data to the API directly
-      const response = await fetch(`http://localhost:3000/api/parents`, {
-        method: type === "create" ? "POST" : "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formattedData),
-      });
-      
-      const result = await response.json();
-      console.log("API response:", result);
-      
-      if (result.success) {
-        toast(`Parent has been ${type === "create" ? "created" : "updated"}!`);
-        setOpen(false);
-        router.refresh();
-      } else {
-        setErrorMessage(result.error || "Something went wrong!");
+    startTransition(async () => {
+      try {
+        // Send the data to the API directly
+        const response = await fetch(`http://localhost:3000/api/parents`, {
+          method: type === "create" ? "POST" : "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formattedData),
+        });
+        
+        const result = await response.json();
+        console.log("API response:", result);
+        
+        if (result.success) {
+          toast(`Parent has been ${type === "create" ? "created" : "updated"}!`);
+          setOpen(false);
+          router.refresh();
+        } else {
+          setErrorMessage(result.error || "Something went wrong!");
+        }
+      } catch (error) {
+        console.error("Error submitting form:", error);
+        setErrorMessage("An unexpected error occurred");
       }
-    } catch (error) {
-      console.error("Error submitting form:", error);
-      setErrorMessage("An unexpected error occurred");
-    } finally {
-      setIsSubmitting(false);
-    }
+    });
   });
 
   return (
@@ -260,9 +259,9 @@ const ParentForm = ({
       )}
       <button 
         className="bg-blue-400 text-white p-2 rounded-md disabled:bg-gray-300"
-        disabled={isSubmitting}
+        disabled={isPending}
       >
-        {isSubmitting ? "Processing..." : (type === "create" ? "Create" : "Update")}
+        {isPending ? "Processing..." : (type === "create" ? "Create" : "Update")}
       </button>
     </form>
   );
