@@ -12,7 +12,6 @@ import InputField from "../InputField";
 import { createExam, updateExam } from "@/lib/actions";
 import { examSchema, ExamSchema} from "@/lib/formValidationSchema";
 import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import { useRouter } from "next/navigation";
 
 const ExamForm = ({
@@ -54,19 +53,11 @@ const ExamForm = ({
 
   useEffect(() => {
     if (state.success) {
-      toast.success(state.message || `Exam has been ${type === "create" ? "created" : "updated"}!`, {
-        position: "bottom-right",
-        autoClose: 3000,
-        theme: "dark"
-      });
+      toast(`Exam has been ${type === "create" ? "created" : "updated"}!`);
       setOpen(false);
       router.refresh();
     } else if (state.error && state.message) {
-      toast.error(state.message, {
-        position: "bottom-right",
-        autoClose: 3000,
-        theme: "dark"
-      });
+      toast.error(state.message);
     }
   }, [state, type, setOpen, router]);
 
@@ -141,14 +132,12 @@ const ExamForm = ({
       >
         {isPending 
           ? "Processing..." 
-          : type === "create"
-            ? "Create Exam"
-            : "Update Exam"
-        }
+          : type === "create" 
+            ? "Create" 
+            : "Update"}
       </button>
     </form>
   );
 };
 
 export default ExamForm;
-

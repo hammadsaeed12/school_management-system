@@ -137,23 +137,17 @@ const mockMessages = [
   }
 ];
 
-const MessagesPage = async () => {
-  const { userId, sessionClaims } = await auth();
-  const role = (sessionClaims?.metadata as { role?: string })?.role;
+import { useState, useEffect } from 'react';
 
-  if (!userId) {
-    return (
-      <div className="p-4 flex justify-center items-center h-screen">
-        <div className="bg-white p-8 rounded-md shadow-md">
-          <h1 className="text-xl font-semibold mb-4">Authentication Required</h1>
-          <p>Please sign in to access your messages.</p>
-          <a href="/sign-in" className="mt-4 inline-block bg-blue-500 text-white px-4 py-2 rounded">
-            Sign In
-          </a>
-        </div>
-      </div>
-    );
-  }
+const MessagesPage = () => {
+  const [userId, setUserId] = useState<string | null>(null);
+  const [role, setRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Set a default user ID for testing
+    setUserId("2");
+    setRole("teacher");
+  }, []);
 
   // Filter conversations based on user role and ID
   const userConversations = mockConversations.filter(conversation => 
