@@ -35,9 +35,21 @@ const SignInPage = () => {
         return;
       }
 
+      if (!result?.ok) {
+        setError("Failed to sign in. Please check your credentials and try again.");
+        setIsLoading(false);
+        return;
+      }
+
       try {
         // Redirect based on user role
         const response = await fetch("/api/auth/me");
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Failed to fetch user data");
+        }
+        
         const data = await response.json();
         
         console.log("User data:", data);
@@ -49,12 +61,12 @@ const SignInPage = () => {
         }
       } catch (fetchError) {
         console.error("Error fetching user data:", fetchError);
-        setError("Error fetching user data after sign in");
+        setError(`Error fetching user data: ${fetchError instanceof Error ? fetchError.message : "Unknown error"}`);
         setIsLoading(false);
       }
     } catch (error) {
       console.error("Sign in error:", error);
-      setError("An error occurred during sign in");
+      setError(`An error occurred during sign in: ${error instanceof Error ? error.message : "Unknown error"}`);
       setIsLoading(false);
     }
   };

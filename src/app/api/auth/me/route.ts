@@ -17,15 +17,11 @@ export async function GET() {
     console.log("Session:", session);
 
     if (!session || !session.user) {
-      // If no session, return a fallback user for testing
-      // In production, you would return an error
-      return NextResponse.json({
-        id: "test",
-        name: "Test User",
-        email: "test@example.com",
-        role: "student",
-        note: "This is a fallback user since no session was found"
-      });
+      // In production, return an error instead of a fallback user
+      return NextResponse.json(
+        { error: "Not authenticated" },
+        { status: 401 }
+      );
     }
 
     return NextResponse.json({
