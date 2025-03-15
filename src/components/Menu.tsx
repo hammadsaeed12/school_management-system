@@ -1,6 +1,7 @@
-import { role } from "@/lib/data";
+import { auth } from "@/lib/auth";
 import Image from "next/image";
 import Link from "next/link";
+import LogoutButton from "./LogoutButton";
 
 const menuItems = [
   {
@@ -8,7 +9,7 @@ const menuItems = [
     items: [
       {
         icon: "/home.png",
-        label: "Home",
+        label: "Dashboard",
         href: "/",
         visible: ["admin", "teacher", "student", "parent"],
       },
@@ -110,14 +111,18 @@ const menuItems = [
       {
         icon: "/logout.png",
         label: "Logout",
-        href: "/logout",
+        href: "#",
+        isLogout: true,
         visible: ["admin", "teacher", "student", "parent"],
       },
     ],
   },
 ];
 
-const Menu = () => {
+const Menu = async () => {
+  const { sessionClaims } = await auth();
+  const role = (sessionClaims?.metadata as { role?: string })?.role || "student";
+  
   return (
     <div className="mt-4 text-sm">
       {menuItems.map((i) => (
@@ -126,18 +131,30 @@ const Menu = () => {
             {i.title}
           </span>
           {i.items.map((item) => {
-            if (item.visible.includes(role)) {
+            if (item.visible.includes(role as string)) {
+              const href = item.label === "Dashboard" ? `/${role}` : item.href;
+              
+              if (item.isLogout) {
+                return (
+                  <LogoutButton 
+                    key={item.label}
+                    icon={item.icon}
+                    label={item.label}
+                  />
+                );
+              }
               return (
                 <Link
-                  href={item.href}
+                  href={href}
                   key={item.label}
-                  className="flex items-center justify-center lg:justify-start gap-4 text-gray-500 py-2 md:px-2 rounded-md hover:bg-lamaSkyLight"
+                  className="flex items-center justify-center lg:justify-start gap-4 text-gray-500 py-2 md:px-2 rounded-md hover:bg-lamaSkyLight transition-colors"
                 >
                   <Image src={item.icon} alt="" width={20} height={20} />
                   <span className="hidden lg:block">{item.label}</span>
                 </Link>
               );
             }
+            return null;
           })}
         </div>
       ))}
