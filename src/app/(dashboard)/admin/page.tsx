@@ -4,13 +4,18 @@ import CountChartContainer from "@/components/CountChartContainer";
 import EventCalendarContainer from "@/components/EventCalendarContainer";
 import FinanceChart from "@/components/FinanceChart";
 import UserCard from "@/components/UserCard";
-import React from "react";
+import { Metadata } from "next";
 
-const AdminPage = ({
-  searchParams,
-}: {
-  searchParams: { [keys: string]: string | undefined };
-}) => {
+export const metadata: Metadata = {
+  title: "Admin Dashboard",
+  description: "School Management System Admin Dashboard",
+};
+
+type Props = {
+  searchParams: Record<string, string | string[] | undefined>
+}
+
+export default function AdminPage({ searchParams }: Props) {
   return (
     <div className="p-4 flex gap-4 flex-col md:flex-row">
       {/* LEFT */}
@@ -46,5 +51,3 @@ const AdminPage = ({
     </div>
   );
 }
-
-export default AdminPage;

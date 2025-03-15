@@ -24,7 +24,10 @@ import { toast } from "react-toastify";
 import { FormContainerProps } from "./FormContainer";
 
 const deleteActionMap = {
-  subject: deleteSubject,
+  subject: (state: any, formData: FormData) => {
+    const id = formData.get("id") as string;
+    return deleteSubject(parseInt(id));
+  },
   class: deleteClass,
   teacher: deleteTeacher,
   student: deleteStudent,
@@ -182,31 +185,25 @@ const FormModal = ({
 
     const handleDelete = async (e: React.FormEvent) => {
       e.preventDefault();
-      setError(null);
       
-      try {
-        const formData = new FormData();
-        formData.append("id", id?.toString() || "");
+      const formData = new FormData();
+      formData.append("id", id as string);
+      
+      const deleteAction = deleteActionMap[table as keyof typeof deleteActionMap];
+      
+      startTransition(async () => {
+        const result = await deleteAction({ success: false, error: false, message: "" }, formData);
         
-        const deleteAction = deleteActionMap[table as keyof typeof deleteActionMap];
+        console.log("Delete action result:", result);
         
-        startTransition(async () => {
-          const result = await deleteAction({ success: false, error: false }, formData);
-          
-          console.log("Delete action result:", result);
-          
-          if (result.success) {
-            toast(`${table} has been deleted!`);
-            setOpen(false);
-            router.refresh();
-          } else if (result.error) {
-            setError(result.message || "Something went wrong!");
-          }
-        });
-      } catch (err) {
-        console.error("Error deleting item:", err);
-        setError("An unexpected error occurred");
-      }
+        if (result.success) {
+          toast(`${table} has been deleted!`);
+          setOpen(false);
+          router.refresh();
+        } else {
+          toast.error(result.message || `Failed to delete ${table}`);
+        }
+      });
     };
 
     return type === "delete" && id ? (

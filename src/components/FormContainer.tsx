@@ -94,7 +94,7 @@ const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
         console.log("Fetched students for parent form:", parentStudents.length);
         
         // If updating, fetch the current parent's students
-        let currentParentStudents = [];
+        let currentParentStudents: string[] = [];
         if (type === "update" && data?.id) {
           const parentWithStudents = await prisma.parent.findUnique({
             where: { id: data.id },

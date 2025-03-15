@@ -280,11 +280,20 @@ export async function PUT(req: Request) {
     // Update the user if username is changed
     if (data.username !== existingStudent.username) {
       try {
-        await prisma.user.update({
-          where: { studentId: data.id },
-          data: { username: data.username },
+        // Find the user first
+        const user = await prisma.user.findFirst({
+          where: { studentId: data.id }
         });
-        console.log("User updated for student");
+        
+        if (user) {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { username: data.username },
+          });
+          console.log("User updated for student");
+        } else {
+          console.log("No user found for student ID:", data.id);
+        }
       } catch (userError) {
         console.error("Error updating user for student:", userError);
       }
@@ -327,10 +336,19 @@ export async function DELETE(req: Request) {
 
     // Delete associated user first
     try {
-      await prisma.user.delete({
-        where: { studentId: id },
+      // Find the user first
+      const user = await prisma.user.findFirst({
+        where: { studentId: id }
       });
-      console.log("User deleted for student");
+      
+      if (user) {
+        await prisma.user.delete({
+          where: { id: user.id },
+        });
+        console.log("User deleted for student");
+      } else {
+        console.log("No user found for student ID:", id);
+      }
     } catch (userError) {
       console.error("Error deleting user for student:", userError);
     }

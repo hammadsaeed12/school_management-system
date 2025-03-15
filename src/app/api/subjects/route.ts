@@ -49,7 +49,6 @@ export async function POST(req: Request) {
   try {
     const data = await req.json();
     
-    // Log the incoming payload
     console.log("API received POST payload:", JSON.stringify(data, null, 2));
 
     // Validate required fields
@@ -61,7 +60,7 @@ export async function POST(req: Request) {
     }
 
     // Check if a subject with the same name already exists
-    const existingSubject = await prisma.subject.findFirst({
+    const existingSubject = await prisma.subject.findUnique({
       where: { name: data.name }
     });
 
@@ -72,29 +71,37 @@ export async function POST(req: Request) {
       );
     }
 
-    // Create the subject data object
-    const subjectData = {
-      name: data.name,
-    };
-
-    // Add teachers if provided
-    if (data.teachers && Array.isArray(data.teachers) && data.teachers.length > 0) {
-      subjectData.teachers = {
-        connect: data.teachers.map((teacherId: string) => ({ id: teacherId })),
-      };
-    }
-
     // Create the subject in the database
-    const subject = await prisma.subject.create({
-      data: subjectData,
-      include: {
-        teachers: true,
-      },
-    });
+    let subject;
+    
+    if (data.teachers && Array.isArray(data.teachers) && data.teachers.length > 0) {
+      // Create with teachers
+      subject = await prisma.subject.create({
+        data: {
+          name: data.name,
+          teachers: {
+            connect: data.teachers.map((teacherId: string) => ({ id: teacherId })),
+          }
+        },
+        include: {
+          teachers: true,
+        },
+      });
+    } else {
+      // Create without teachers
+      subject = await prisma.subject.create({
+        data: {
+          name: data.name,
+        },
+        include: {
+          teachers: true,
+        },
+      });
+    }
 
     console.log("Subject created:", subject);
 
-    return NextResponse.json({ success: true, data: subject });
+    return NextResponse.json({ success: true, id: subject.id });
   } catch (err) {
     console.error("Error creating subject:", err);
     const errorMessage = err instanceof Error ? err.message : "Internal Server Error";
@@ -109,7 +116,6 @@ export async function PUT(req: Request) {
   try {
     const data = await req.json();
     
-    // Log the incoming payload
     console.log("API received PUT payload:", JSON.stringify(data, null, 2));
 
     // Validate required fields
@@ -140,46 +146,54 @@ export async function PUT(req: Request) {
     }
 
     // Check if another subject with the same name exists
-    const duplicateSubject = await prisma.subject.findFirst({
-      where: {
-        name: data.name,
-        id: { not: parseInt(data.id) },
-      },
-    });
+    if (data.name !== existingSubject.name) {
+      const nameExists = await prisma.subject.findUnique({
+        where: { name: data.name }
+      });
 
-    if (duplicateSubject) {
-      return NextResponse.json(
-        { success: false, error: `Another subject with name '${data.name}' already exists` },
-        { status: 400 }
-      );
-    }
-
-    // Create the subject data object
-    const subjectData = {
-      name: data.name,
-    };
-
-    // Handle teachers update if provided
-    if (data.teachers) {
-      subjectData.teachers = {
-        set: Array.isArray(data.teachers) ? data.teachers.map((teacherId: string) => ({
-          id: teacherId,
-        })) : [],
-      };
+      if (nameExists) {
+        return NextResponse.json(
+          { success: false, error: `A subject with name '${data.name}' already exists` },
+          { status: 400 }
+        );
+      }
     }
 
     // Update the subject in the database
-    const updatedSubject = await prisma.subject.update({
-      where: { id: parseInt(data.id) },
-      data: subjectData,
-      include: {
-        teachers: true,
-      },
-    });
+    let updatedSubject;
+    
+    if (data.teachers !== undefined) {
+      // Update with teachers
+      updatedSubject = await prisma.subject.update({
+        where: { id: parseInt(data.id) },
+        data: {
+          name: data.name,
+          teachers: {
+            set: Array.isArray(data.teachers) ? data.teachers.map((teacherId: string) => ({
+              id: teacherId,
+            })) : [],
+          }
+        },
+        include: {
+          teachers: true,
+        },
+      });
+    } else {
+      // Update without changing teachers
+      updatedSubject = await prisma.subject.update({
+        where: { id: parseInt(data.id) },
+        data: {
+          name: data.name,
+        },
+        include: {
+          teachers: true,
+        },
+      });
+    }
 
     console.log("Subject updated:", updatedSubject);
 
-    return NextResponse.json({ success: true, data: updatedSubject });
+    return NextResponse.json({ success: true });
   } catch (err) {
     console.error("Error updating subject:", err);
     const errorMessage = err instanceof Error ? err.message : "Internal Server Error";

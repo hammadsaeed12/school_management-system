@@ -72,9 +72,9 @@ const SignInPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-lamaSkyLight to-blue-100">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-lamaSkyLight to-blue-100 p-4">
       <div className="w-full max-w-md">
-        <div className="bg-white p-8 rounded-xl shadow-2xl transform transition-all">
+        <div className="bg-white p-8 rounded-xl shadow-2xl">
           <div className="flex flex-col items-center mb-8">
             <div className="bg-blue-50 p-3 rounded-full mb-4">
               <Image src="/logo.png" alt="SchooLama Logo" width={40} height={40} className="h-10 w-10" />
@@ -92,7 +92,7 @@ const SignInPage = () => {
           
           <form id="loginForm" onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -101,6 +101,7 @@ const SignInPage = () => {
                   </svg>
                 </div>
                 <input
+                  id="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -112,7 +113,7 @@ const SignInPage = () => {
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -120,6 +121,7 @@ const SignInPage = () => {
                   </svg>
                 </div>
                 <input
+                  id="password"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}

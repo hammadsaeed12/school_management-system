@@ -161,10 +161,10 @@ export async function PUT(req: Request) {
     const currentStudentIds = currentParent.students.map(student => student.id);
     
     // Determine which students to disconnect (those in current but not in new list)
-    const studentsToDisconnect = currentStudentIds.filter(id => !studentIds.includes(id));
+    const studentsToDisconnect = currentStudentIds.filter((id: string) => !studentIds.includes(id));
     
     // Determine which students to connect (those in new list but not in current)
-    const studentsToConnect = studentIds.filter(id => !currentStudentIds.includes(id));
+    const studentsToConnect = studentIds.filter((id: string) => !currentStudentIds.includes(id));
 
     console.log("Students to disconnect:", studentsToDisconnect);
     console.log("Students to connect:", studentsToConnect);
@@ -179,7 +179,7 @@ export async function PUT(req: Request) {
         // Disconnect students that are no longer associated
         ...(studentsToDisconnect.length > 0 && {
           students: {
-            disconnect: studentsToDisconnect.map(id => ({ id }))
+            disconnect: studentsToDisconnect.map((id: string) => ({ id }))
           }
         })
       },
@@ -193,7 +193,7 @@ export async function PUT(req: Request) {
         },
         data: {
           students: {
-            connect: studentsToConnect.map(id => ({ id }))
+            connect: studentsToConnect.map((id: string) => ({ id }))
           }
         },
       });

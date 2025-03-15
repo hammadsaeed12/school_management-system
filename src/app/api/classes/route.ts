@@ -15,7 +15,7 @@ export async function GET(req: Request) {
         include: {
           grade: true,
           students: true,
-          teachers: true,
+          supervisor: true,
         },
       });
 
@@ -33,7 +33,7 @@ export async function GET(req: Request) {
         include: {
           grade: true,
           students: true,
-          teachers: true,
+          supervisor: true,
           _count: {
             select: {
               students: true,

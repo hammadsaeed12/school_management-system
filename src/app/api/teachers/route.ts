@@ -59,11 +59,10 @@ export async function POST(req: Request) {
   try {
     const data = await req.json();
     
-    // Log the incoming payload
     console.log("API received POST payload:", JSON.stringify(data, null, 2));
 
     // Validate required fields
-    const requiredFields = ["username", "name", "surname", "birthday", "password", "bloodType", "sex"];
+    const requiredFields = ["username", "name", "surname", "birthday", "password"];
     for (const field of requiredFields) {
       if (!data[field]) {
         return NextResponse.json(
@@ -98,37 +97,57 @@ export async function POST(req: Request) {
     const teacherId = generateUniqueId();
     console.log("Generated teacher ID:", teacherId);
 
-    // Create the teacher data object with required fields
-    const teacherData = {
-      id: teacherId,
-      username: data.username,
-      name: data.name,
-      surname: data.surname,
-      email: data.email || null,
-      phone: data.phone || null,
-      address: data.address || "",
-      img: data.img || null,
-      bloodType: data.bloodType || "",
-      sex: data.sex || "MALE",
-      birthday: birthday,
-    };
-
-    // Add subjects if provided
-    if (data.subjects && Array.isArray(data.subjects) && data.subjects.length > 0) {
-      teacherData.subjects = {
-        connect: data.subjects.map((subjectId: string) => ({
-          id: parseInt(subjectId),
-        })),
-      };
-    }
-
     // Create the teacher in the database
-    const teacher = await prisma.teacher.create({
-      data: teacherData,
-      include: {
-        subjects: true,
-      },
-    });
+    let teacher;
+    
+    if (data.subjects && Array.isArray(data.subjects) && data.subjects.length > 0) {
+      // Create with subjects
+      teacher = await prisma.teacher.create({
+        data: {
+          id: teacherId,
+          username: data.username,
+          name: data.name,
+          surname: data.surname,
+          email: data.email || null,
+          phone: data.phone || null,
+          address: data.address || "",
+          img: data.img || null,
+          bloodType: data.bloodType || "",
+          sex: data.sex || "MALE",
+          birthday: birthday,
+          subjects: {
+            connect: data.subjects.map((subjectId: string) => ({
+              id: parseInt(subjectId),
+            })),
+          }
+        },
+        include: {
+          subjects: true,
+          classes: true,
+        },
+      });
+    } else {
+      // Create without subjects
+      teacher = await prisma.teacher.create({
+        data: {
+          id: teacherId,
+          username: data.username,
+          name: data.name,
+          surname: data.surname,
+          email: data.email || null,
+          phone: data.phone || null,
+          address: data.address || "",
+          img: data.img || null,
+          bloodType: data.bloodType || "",
+          sex: data.sex || "MALE",
+          birthday: birthday,
+        },
+        include: {
+          subjects: true,
+          classes: true,
+        },
+      });
+    }
 
     console.log("Teacher created:", teacher);
 
@@ -167,7 +186,6 @@ export async function PUT(req: Request) {
   try {
     const data = await req.json();
     
-    // Log the incoming payload
     console.log("API received PUT payload:", JSON.stringify(data, null, 2));
 
     // Validate required fields
@@ -202,75 +220,79 @@ export async function PUT(req: Request) {
       }
     }
 
-    // Create the teacher data object with required fields
-    const teacherData = {
-      username: data.username,
-      name: data.name,
-      surname: data.surname,
-      email: data.email || null,
-      phone: data.phone || null,
-      address: data.address || "",
-      img: data.img || null,
-      bloodType: data.bloodType || "",
-      sex: data.sex || "MALE",
-      ...(birthday && { birthday }),
-    };
-
-    // Handle subjects update if provided
-    if (data.subjects) {
-      teacherData.subjects = {
-        set: Array.isArray(data.subjects) ? data.subjects.map((subjectId: string) => ({
-          id: parseInt(subjectId),
-        })) : [],
-      };
-    }
-
     // Update the teacher in the database
-    const updatedTeacher = await prisma.teacher.update({
-      where: { id: data.id },
-      data: teacherData,
-      include: {
-        subjects: true,
-      },
-    });
+    let updatedTeacher;
+    
+    if (data.subjects !== undefined) {
+      // Update with subjects
+      updatedTeacher = await prisma.teacher.update({
+        where: { id: data.id },
+        data: {
+          username: data.username,
+          name: data.name,
+          surname: data.surname,
+          email: data.email || null,
+          phone: data.phone || null,
+          address: data.address || "",
+          img: data.img || null,
+          bloodType: data.bloodType || "",
+          sex: data.sex || "MALE",
+          ...(birthday && { birthday }),
+          subjects: {
+            set: Array.isArray(data.subjects) ? data.subjects.map((subjectId: string) => ({
+              id: parseInt(subjectId),
+            })) : [],
+          }
+        },
+        include: {
+          subjects: true,
+          classes: true,
+        },
+      });
+    } else {
+      // Update without changing subjects
+      updatedTeacher = await prisma.teacher.update({
+        where: { id: data.id },
+        data: {
+          username: data.username,
+          name: data.name,
+          surname: data.surname,
+          email: data.email || null,
+          phone: data.phone || null,
+          address: data.address || "",
+          img: data.img || null,
+          bloodType: data.bloodType || "",
+          sex: data.sex || "MALE",
+          ...(birthday && { birthday }),
+        },
+        include: {
+          subjects: true,
+          classes: true,
+        },
+      });
+    }
 
     console.log("Teacher updated:", updatedTeacher);
 
-    // Find the user associated with this teacher
-    const user = await prisma.user.findFirst({
-      where: { teacherId: data.id }
-    });
-
-    // Update user information if needed
-    if (user) {
-      const userUpdateData = {
-        username: data.username,
-      };
-
-      // Only update password if a new one is provided
-      if (data.password && data.password.trim() !== "") {
-        userUpdateData.password = await bcrypt.hash(data.password, 10);
-      }
-
-      await prisma.user.update({
-        where: { id: user.id },
-        data: userUpdateData,
-      });
-      console.log("User updated for teacher");
-    } else {
-      console.error("No user found for teacher ID:", data.id);
-      // Create a user if one doesn't exist and password is provided
-      if (data.password && data.password.trim() !== "") {
-        const hashedPassword = await bcrypt.hash(data.password, 10);
-        await prisma.user.create({
-          data: {
-            username: data.username,
-            password: hashedPassword,
-            role: "teacher",
-            teacherId: data.id,
-          },
+    // Update the user if username is changed
+    if (data.username !== existingTeacher.username) {
+      try {
+        // Find the user first
+        const user = await prisma.user.findFirst({
+          where: { teacherId: data.id }
         });
-        console.log("Created new user for existing teacher");
+        
+        if (user) {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { username: data.username },
+          });
+          console.log("User updated for teacher");
+        } else {
+          console.log("No user found for teacher ID:", data.id);
+        }
+      } catch (userError) {
+        console.error("Error updating user for teacher:", userError);
       }
     }
 
@@ -334,10 +356,19 @@ export async function DELETE(req: Request) {
 
     // Delete associated user first
     try {
-      await prisma.user.delete({
-        where: { teacherId: id },
+      // Find the user first
+      const user = await prisma.user.findFirst({
+        where: { teacherId: id }
       });
-      console.log("User deleted for teacher");
+      
+      if (user) {
+        await prisma.user.delete({
+          where: { id: user.id },
+        });
+        console.log("User deleted for teacher");
+      } else {
+        console.log("No user found for teacher ID:", id);
+      }
     } catch (userError) {
       console.error("Error deleting user for teacher:", userError);
     }
