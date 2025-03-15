@@ -16,6 +16,7 @@ import { toast } from "react-toastify";
 import { createTeacher, updateTeacher } from "@/lib/actions";
 import { useRouter } from "next/navigation";
 import { CldUploadWidget } from "next-cloudinary";
+import cloudinaryConfig from "@/lib/cloudinary-config";
 
 // Define the expected return type from the server actions
 interface ActionResult {
@@ -298,6 +299,10 @@ const TeacherForm = ({
           onSuccess={(result, { widget }) => {
             setImg(result.info);
             widget.close();
+          }}
+          options={{
+            cloudName: cloudinaryConfig.cloudName,
+            apiKey: cloudinaryConfig.apiKey,
           }}
         >
           {({ open }) => {
