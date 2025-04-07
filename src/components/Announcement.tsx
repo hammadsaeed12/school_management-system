@@ -2,9 +2,9 @@ import prisma from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import React from "react";
 import Link from "next/link";
-
+import { headers } from "next/headers";
 const Announcement = async () => {
-  const { userId, sessionClaims } = await auth();
+  const { userId, sessionClaims } = await auth(headers());
   const role = (sessionClaims?.metadata as { role?: string })?.role;
 
   const roleConditions = {
@@ -43,9 +43,9 @@ const Announcement = async () => {
       </div>
       
       {data.length === 0 ? (
-        <div className="text-center py-8">
-          <div className="bg-gray-100 p-3 rounded-full inline-flex mx-auto mb-3">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="py-8 text-center">
+          <div className="inline-flex p-3 mx-auto mb-3 bg-gray-100 rounded-full">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
             </svg>
           </div>
@@ -67,11 +67,11 @@ const Announcement = async () => {
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-1">
                     <h3 className="font-medium text-gray-900">{announcement.title}</h3>
-                    <span className="text-xs bg-white rounded-md px-2 py-1 text-gray-500 ml-2">
+                    <span className="px-2 py-1 ml-2 text-xs text-gray-500 bg-white rounded-md">
                       {new Date(announcement.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-600 mt-1 line-clamp-3">
+                  <p className="mt-1 text-sm text-gray-600 line-clamp-3">
                     {announcement.description}
                   </p>
                 </div>

@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import Image from "next/image";
 import Link from "next/link";
+import { headers } from "next/headers";
 import LogoutButton from "./LogoutButton";
 
 const menuItems = [
@@ -120,14 +121,14 @@ const menuItems = [
 ];
 
 const Menu = async () => {
-  const { sessionClaims } = await auth();
+  const { sessionClaims } = await auth(headers());
   const role = (sessionClaims?.metadata as { role?: string })?.role || "student";
   
   return (
     <div className="mt-4 text-sm">
       {menuItems.map((i) => (
         <div className="flex flex-col gap-2" key={i.title}>
-          <span className="hidden lg:block text-gray-400 font-light my-4">
+          <span className="hidden my-4 font-light text-gray-400 lg:block">
             {i.title}
           </span>
           {i.items.map((item) => {
@@ -147,7 +148,7 @@ const Menu = async () => {
                 <Link
                   href={href}
                   key={item.label}
-                  className="flex items-center justify-center lg:justify-start gap-4 text-gray-500 py-2 md:px-2 rounded-md hover:bg-lamaSkyLight transition-colors"
+                  className="flex items-center justify-center gap-4 py-2 text-gray-500 transition-colors rounded-md lg:justify-start md:px-2 hover:bg-lamaSkyLight"
                 >
                   <Image src={item.icon} alt="" width={20} height={20} />
                   <span className="hidden lg:block">{item.label}</span>

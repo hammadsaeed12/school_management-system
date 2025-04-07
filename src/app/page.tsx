@@ -1,8 +1,10 @@
+import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
 export default async function Home() {
-  const { userId, sessionClaims } = await auth();
+  const headersList = headers();
+  const { userId, sessionClaims } = await auth(headersList);
   
   if (!userId) {
     return redirect("/sign-in");
@@ -24,4 +26,4 @@ export default async function Home() {
     default:
       return redirect("/student"); // Default to student dashboard
   }
-} 
+}

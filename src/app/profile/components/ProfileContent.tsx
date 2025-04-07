@@ -1,4 +1,5 @@
 "use client";
+import { headers } from "next/headers";
 import { Student } from "@prisma/client";
 import Image from "next/image";
 import Link from "next/link";

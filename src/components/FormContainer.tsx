@@ -2,7 +2,7 @@ import React from "react";
 import FormModal from "./FormModal";
 import prisma from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-
+import { headers } from "next/headers";
 export type FormContainerProps = {
   table:
     | "teacher"
@@ -23,7 +23,7 @@ export type FormContainerProps = {
 };
 const FormContainer = async ({ table, type, data, id }: FormContainerProps) => {
   let relatedData = {};
-  const { userId, sessionClaims } = await auth();
+  const { userId, sessionClaims } = await auth(headers());
   const role = (sessionClaims?.metadata as { role?: string })?.role;
   const currentUserId = userId;
 

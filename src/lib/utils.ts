@@ -1,8 +1,9 @@
 import { auth } from "./auth";
+import { headers } from "next/headers";
 
 export const getRole = async () => {
   try {
-    const { sessionClaims } = await auth();
+    const { sessionClaims } = await auth(headers());
     return (sessionClaims?.metadata as { role?: string })?.role;
   } catch (error) {
     console.log("ERROR WHILE FETCHING ROLE:", error);
@@ -11,7 +12,7 @@ export const getRole = async () => {
 
 export const getCurrentUserId = async () => {
   try {
-    const { userId } = await auth();
+    const { userId } = await auth(headers());
     return userId;
   } catch (error) {
     console.log("ERROR WHILE FETCHING USER ID:", error);
