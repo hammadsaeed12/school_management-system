@@ -3,7 +3,7 @@ pipeline {
     environment {
         APP_NAME = "school_management-system"
         REPO_NAME = "school_management-system"
-        REPO_URL = "https://github.com/hammadsaeed12/school_management-system.git"
+        REPO_URL = "git@github.com:hammadsaeed12/school_management-system.git"
         // DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1329384928579817513/dJIdE2afGsiQtloHfcnVJNMzOmNYypvyHsp-fKPYQ9ktHLEpGTP1JRHejfJYs0zPYZqK"
         PORT = '7000'
     }
@@ -119,15 +119,15 @@ pipeline {
             }
         }
     }
-    post {
-        success {
-            discordSend description: "✅ Pipeline succeeded for ${APP_NAME}!", footer: "Jenkins Pipeline Notification", link: env.BUILD_URL, result: "SUCCESS", title: env.JOB_NAME, webhookURL: env.DISCORD_WEBHOOK
-        }
-        failure {
-            discordSend description: "❌ Pipeline failed for ${APP_NAME}. Check logs!", footer: "Jenkins Pipeline Notification", link: env.BUILD_URL, result: "FAILURE", title: env.JOB_NAME, webhookURL: env.DISCORD_WEBHOOK
-        }
-        always {
-            echo "Pipeline completed."
-        }
-    }
+    // post {
+    //     success {
+    //         discordSend description: "✅ Pipeline succeeded for ${APP_NAME}!", footer: "Jenkins Pipeline Notification", link: env.BUILD_URL, result: "SUCCESS", title: env.JOB_NAME, webhookURL: env.DISCORD_WEBHOOK
+    //     }
+    //     failure {
+    //         discordSend description: "❌ Pipeline failed for ${APP_NAME}. Check logs!", footer: "Jenkins Pipeline Notification", link: env.BUILD_URL, result: "FAILURE", title: env.JOB_NAME, webhookURL: env.DISCORD_WEBHOOK
+    //     }
+    //     always {
+    //         echo "Pipeline completed."
+    //     }
+    // }
 }
