@@ -7,6 +7,8 @@ import { ITEM_PER_PAGE } from "@/lib/setting";
 import { Class, Event, Prisma } from "@prisma/client";
 import Image from "next/image";
 import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+
 
 type EventList = Event & { class: Class };
 
@@ -16,7 +18,7 @@ const EventListPage = async ({
   searchParams: { [key: string]: string | undefined };
 }) => {
 
-  const { userId, sessionClaims } = await auth();
+  const { userId, sessionClaims } = await auth(headers());
   const role = (sessionClaims?.metadata as { role?: string })?.role;
   const currentUserId = userId;
 
@@ -57,7 +59,7 @@ const EventListPage = async ({
   const renderRow = (item: EventList) => (
     <tr
       key={item.id}
-      className="border-b border-gray-200 even:bg-slate-50 text-sm hover:bg-lamaPurpleLight"
+      className="text-sm border-b border-gray-200 even:bg-slate-50 hover:bg-lamaPurpleLight"
     >
       <td className="flex items-center gap-4 p-4">{item.title}</td>
       <td>{item.class?.name || "-"}</td>
@@ -141,17 +143,17 @@ const EventListPage = async ({
   ]);
 
   return (
-    <div className="bg-white p-4 rounded-md flex-1 m-4 mt-0">
+    <div className="flex-1 p-4 m-4 mt-4 bg-white rounded-md">
       {/* TOP */}
       <div className="flex items-center justify-between">
-        <h1 className="hidden md:block text-lg font-semibold">All Events</h1>
-        <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
+        <h1 className="hidden text-lg font-semibold md:block">All Events</h1>
+        <div className="flex flex-col items-center w-full gap-4 md:flex-row md:w-auto">
           <TableSearch />
-          <div className="flex items-center gap-4 self-end">
-            <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
+          <div className="flex items-center self-end gap-4">
+            <button className="flex items-center justify-center w-8 h-8 rounded-full bg-lamaYellow">
               <Image src="/filter.png" alt="" width={14} height={14} />
             </button>
-            <button className="w-8 h-8 flex items-center justify-center rounded-full bg-lamaYellow">
+            <button className="flex items-center justify-center w-8 h-8 rounded-full bg-lamaYellow">
               <Image src="/sort.png" alt="" width={14} height={14} />
             </button>
             {role === "admin" && <FormContainer table="event" type="create" />}

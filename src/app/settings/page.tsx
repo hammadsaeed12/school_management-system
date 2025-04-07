@@ -1,3 +1,4 @@
+import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import SettingsForm from "@/components/Forms/SettingsForm";
 import Link from "next/link";
@@ -57,16 +58,17 @@ const mockUserData = {
 };
 
 const SettingsPage = async () => {
-  const { userId, sessionClaims } = await auth();
+  const headersList = headers();
+  const { userId, sessionClaims } = await auth(headersList);
   const role = (sessionClaims?.metadata as { role?: string })?.role;
 
   if (!userId) {
     return (
-      <div className="p-4 flex justify-center items-center h-screen">
-        <div className="bg-white p-8 rounded-md shadow-md">
-          <h1 className="text-xl font-semibold mb-4">Authentication Required</h1>
+      <div className="flex items-center justify-center h-screen p-4">
+        <div className="p-8 bg-white rounded-md shadow-md">
+          <h1 className="mb-4 text-xl font-semibold">Authentication Required</h1>
           <p>Please sign in to access your settings.</p>
-          <a href="/sign-in" className="mt-4 inline-block bg-blue-500 text-white px-4 py-2 rounded">
+          <a href="/sign-in" className="inline-block px-4 py-2 mt-4 text-white bg-blue-500 rounded">
             Sign In
           </a>
         </div>
@@ -80,8 +82,8 @@ const SettingsPage = async () => {
   if (!userData) {
     return (
       <div className="p-4">
-        <div className="bg-white p-8 rounded-md shadow-md">
-          <h1 className="text-xl font-semibold mb-4">Profile Not Found</h1>
+        <div className="p-8 bg-white rounded-md shadow-md">
+          <h1 className="mb-4 text-xl font-semibold">Profile Not Found</h1>
           <p>We couldn't find your profile information.</p>
         </div>
       </div>
@@ -89,14 +91,14 @@ const SettingsPage = async () => {
   }
 
   return (
-    <div className="p-4 max-w-5xl mx-auto">
+    <div className="max-w-5xl p-4 mx-auto">
       {/* Back Button */}
-      <div className="mb-4 flex justify-between items-center">
+      <div className="flex items-center justify-between mb-4">
         <Link 
           href={`/${role}`} 
           className="inline-flex items-center text-blue-600 hover:text-blue-800"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M9.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L7.414 9H15a1 1 0 110 2H7.414l2.293 2.293a1 1 0 010 1.414z" clipRule="evenodd" />
           </svg>
           Back to Dashboard
@@ -106,32 +108,32 @@ const SettingsPage = async () => {
           href="/profile" 
           className="inline-flex items-center text-blue-600 hover:text-blue-800"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
           </svg>
           View Profile
         </Link>
       </div>
       
-      <div className="bg-white rounded-xl shadow-md overflow-hidden">
+      <div className="overflow-hidden bg-white shadow-md rounded-xl">
         <div className="p-8">
-          <h1 className="text-2xl font-bold mb-6">Settings</h1>
+          <h1 className="mb-6 text-2xl font-bold">Settings</h1>
           
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
             {/* Sidebar */}
             <div className="md:col-span-1">
-              <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="p-4 rounded-lg bg-gray-50">
                 <nav className="space-y-1">
-                  <a href="#profile" className="block px-3 py-2 rounded-md bg-blue-50 text-blue-700 font-medium">
+                  <a href="#profile" className="block px-3 py-2 font-medium text-blue-700 rounded-md bg-blue-50">
                     Profile Settings
                   </a>
-                  <a href="#password" className="block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100">
+                  <a href="#password" className="block px-3 py-2 text-gray-700 rounded-md hover:bg-gray-100">
                     Password
                   </a>
-                  <a href="#notifications" className="block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100">
+                  <a href="#notifications" className="block px-3 py-2 text-gray-700 rounded-md hover:bg-gray-100">
                     Notifications
                   </a>
-                  <a href="#appearance" className="block px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100">
+                  <a href="#appearance" className="block px-3 py-2 text-gray-700 rounded-md hover:bg-gray-100">
                     Appearance
                   </a>
                 </nav>
@@ -142,19 +144,19 @@ const SettingsPage = async () => {
             <div className="md:col-span-3">
               {/* Profile Settings Section */}
               <section id="profile" className="mb-12">
-                <h2 className="text-xl font-semibold mb-4">Profile Settings</h2>
-                <div className="bg-gray-50 p-6 rounded-lg">
+                <h2 className="mb-4 text-xl font-semibold">Profile Settings</h2>
+                <div className="p-6 rounded-lg bg-gray-50">
                   <SettingsForm userData={userData} role={role} />
                 </div>
               </section>
               
               {/* Password Section */}
               <section id="password" className="mb-12">
-                <h2 className="text-xl font-semibold mb-4">Password</h2>
-                <div className="bg-gray-50 p-6 rounded-lg">
+                <h2 className="mb-4 text-xl font-semibold">Password</h2>
+                <div className="p-6 rounded-lg bg-gray-50">
                   <form className="space-y-4">
                     <div>
-                      <label htmlFor="current-password" className="block text-sm font-medium text-gray-700 mb-1">
+                      <label htmlFor="current-password" className="block mb-1 text-sm font-medium text-gray-700">
                         Current Password
                       </label>
                       <input
@@ -164,7 +166,7 @@ const SettingsPage = async () => {
                       />
                     </div>
                     <div>
-                      <label htmlFor="new-password" className="block text-sm font-medium text-gray-700 mb-1">
+                      <label htmlFor="new-password" className="block mb-1 text-sm font-medium text-gray-700">
                         New Password
                       </label>
                       <input
@@ -174,7 +176,7 @@ const SettingsPage = async () => {
                       />
                     </div>
                     <div>
-                      <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700 mb-1">
+                      <label htmlFor="confirm-password" className="block mb-1 text-sm font-medium text-gray-700">
                         Confirm New Password
                       </label>
                       <input
@@ -186,7 +188,7 @@ const SettingsPage = async () => {
                     <div>
                       <button
                         type="submit"
-                        className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition"
+                        className="px-4 py-2 text-white transition bg-blue-500 rounded-md hover:bg-blue-600"
                       >
                         Update Password
                       </button>
@@ -197,8 +199,8 @@ const SettingsPage = async () => {
               
               {/* Notifications Section */}
               <section id="notifications" className="mb-12">
-                <h2 className="text-xl font-semibold mb-4">Notification Preferences</h2>
-                <div className="bg-gray-50 p-6 rounded-lg">
+                <h2 className="mb-4 text-xl font-semibold">Notification Preferences</h2>
+                <div className="p-6 rounded-lg bg-gray-50">
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <div>
@@ -247,7 +249,7 @@ const SettingsPage = async () => {
                     <div className="pt-4">
                       <button
                         type="button"
-                        className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition"
+                        className="px-4 py-2 text-white transition bg-blue-500 rounded-md hover:bg-blue-600"
                       >
                         Save Preferences
                       </button>
@@ -258,43 +260,43 @@ const SettingsPage = async () => {
               
               {/* Appearance Section */}
               <section id="appearance" className="mb-12">
-                <h2 className="text-xl font-semibold mb-4">Appearance</h2>
-                <div className="bg-gray-50 p-6 rounded-lg">
+                <h2 className="mb-4 text-xl font-semibold">Appearance</h2>
+                <div className="p-6 rounded-lg bg-gray-50">
                   <div className="space-y-6">
                     <div>
-                      <h3 className="text-sm font-medium text-gray-700 mb-2">Theme</h3>
+                      <h3 className="mb-2 text-sm font-medium text-gray-700">Theme</h3>
                       <div className="grid grid-cols-3 gap-4">
-                        <div className="border-2 border-blue-500 p-2 rounded-md text-center cursor-pointer bg-white">
-                          <div className="h-12 bg-white border border-gray-200 rounded mb-2"></div>
+                        <div className="p-2 text-center bg-white border-2 border-blue-500 rounded-md cursor-pointer">
+                          <div className="h-12 mb-2 bg-white border border-gray-200 rounded"></div>
                           <span className="text-sm">Light</span>
                         </div>
-                        <div className="border-2 border-gray-200 p-2 rounded-md text-center cursor-pointer">
-                          <div className="h-12 bg-gray-800 rounded mb-2"></div>
+                        <div className="p-2 text-center border-2 border-gray-200 rounded-md cursor-pointer">
+                          <div className="h-12 mb-2 bg-gray-800 rounded"></div>
                           <span className="text-sm">Dark</span>
                         </div>
-                        <div className="border-2 border-gray-200 p-2 rounded-md text-center cursor-pointer">
-                          <div className="h-12 bg-gradient-to-r from-white to-gray-800 rounded mb-2"></div>
+                        <div className="p-2 text-center border-2 border-gray-200 rounded-md cursor-pointer">
+                          <div className="h-12 mb-2 rounded bg-gradient-to-r from-white to-gray-800"></div>
                           <span className="text-sm">System</span>
                         </div>
                       </div>
                     </div>
                     
                     <div>
-                      <h3 className="text-sm font-medium text-gray-700 mb-2">Accent Color</h3>
+                      <h3 className="mb-2 text-sm font-medium text-gray-700">Accent Color</h3>
                       <div className="grid grid-cols-6 gap-4">
-                        <div className="h-8 w-8 rounded-full bg-blue-500 cursor-pointer ring-2 ring-offset-2 ring-blue-500"></div>
-                        <div className="h-8 w-8 rounded-full bg-purple-500 cursor-pointer"></div>
-                        <div className="h-8 w-8 rounded-full bg-green-500 cursor-pointer"></div>
-                        <div className="h-8 w-8 rounded-full bg-red-500 cursor-pointer"></div>
-                        <div className="h-8 w-8 rounded-full bg-yellow-500 cursor-pointer"></div>
-                        <div className="h-8 w-8 rounded-full bg-pink-500 cursor-pointer"></div>
+                        <div className="w-8 h-8 bg-blue-500 rounded-full cursor-pointer ring-2 ring-offset-2 ring-blue-500"></div>
+                        <div className="w-8 h-8 bg-purple-500 rounded-full cursor-pointer"></div>
+                        <div className="w-8 h-8 bg-green-500 rounded-full cursor-pointer"></div>
+                        <div className="w-8 h-8 bg-red-500 rounded-full cursor-pointer"></div>
+                        <div className="w-8 h-8 bg-yellow-500 rounded-full cursor-pointer"></div>
+                        <div className="w-8 h-8 bg-pink-500 rounded-full cursor-pointer"></div>
                       </div>
                     </div>
                     
                     <div className="pt-4">
                       <button
                         type="button"
-                        className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition"
+                        className="px-4 py-2 text-white transition bg-blue-500 rounded-md hover:bg-blue-600"
                       >
                         Save Appearance
                       </button>
@@ -310,4 +312,4 @@ const SettingsPage = async () => {
   );
 };
 
-export default SettingsPage; 
+export default SettingsPage;
