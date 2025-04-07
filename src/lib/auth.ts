@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth-options";
 
 // This function replaces Clerk's auth() function with NextAuth's equivalent
-export async function auth() {
+export async function auth(headersInstance: unknown) {
   const session = await getServerSession(authOptions);
   
   if (!session || !session.user) {
