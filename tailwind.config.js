@@ -1,6 +1,5 @@
-import type { Config } from "tailwindcss";
-
-export default {
+/** @type {import('tailwindcss').Config} */
+module.exports = {
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -11,18 +10,20 @@ export default {
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
         "gradient-conic": "conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))",
-        
       },
-      colors:{
-        lamaSky:'#C3EBFA',
-        lamaSkyLight:'#EDF9FD',
-        lamaPurple:'#CFCEFF',
-        lamaPurpleLight:'#F1F0FF',
-        lamaYellow:'#FAE27C',
-        lamaYellowLight:'#FEFCE8'
-
-      }
+      colors: {
+        lamaSky: '#C3EBFA',
+        lamaSkyLight: '#EDF9FD',
+        lamaPurple: '#CFCEFF',
+        lamaPurpleLight: '#F1F0FF',
+        lamaYellow: '#FAE27C',
+        lamaYellowLight: '#FEFCE8'
+      },
+      fontFamily: {
+        sans: ['var(--font-inter)', 'sans-serif'],
+      },
     },
   },
   plugins: [],
-} satisfies Config;
+}
+

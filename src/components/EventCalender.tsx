@@ -1,55 +1,67 @@
-"use client"
-import React, { useState } from 'react'
-import Calendar from 'react-calendar';
-import 'react-calendar/dist/Calendar.css';
-import Image from "next/image";
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import Calendar from "react-calendar";
+import "react-calendar/dist/Calendar.css";
+import "./EventCalendar.css"; // We'll create this file next
+
 type ValuePiece = Date | null;
 
 type Value = ValuePiece | [ValuePiece, ValuePiece];
 
-//TEMPORARY
-const events = [
-    {
-        id:1,
-        title:"Lorem ispum dolor",
-        time:"12:00 PM -2:00PM",
-        description:"Lorem ispum dolor sit amet, consecteur adsiscing elit.",
-    },
-    {
-        id:2,
-        title:"Lorem ispum dolor",
-        time:"12:00 PM -2:00PM",
-        description:"Lorem ispum dolor sit amet, consecteur adsiscing elit.",
-    },
-    {
-        id:3,
-        title:"Lorem ispum dolor",
-        time:"12:00 PM -2:00PM",
-        description:"Lorem ispum dolor sit amet, consecteur adsiscing elit.",
-    },
+const EventCalendar = () => {
+  const [value, onChange] = useState<Value>(new Date());
 
-];
-const EventCalender = () => {
-    const [value, onChange] = useState<Value>(new Date());
+  const router = useRouter();
+
+  useEffect(() => {
+    if (value instanceof Date) {
+      router.push(`?date=${value.toISOString().split('T')[0]}`);
+    }
+  }, [value, router]);
+
   return (
-    <div className='bg-white p-4 rounded-md '><Calendar onChange={onChange} value={value} />
-    <div className='flex items-center justify-between'>
-        <h1 className='text-xl font-semibold my-4'>Events</h1>
-        <Image src='/moreDark.png' alt='' width={20} height={20}/>
+    <div className="event-calendar-container">
+      <div className="p-4 border-b border-gray-100">
+        <h2 className="text-lg font-semibold">Calendar</h2>
+      </div>
+      <div className="p-4">
+        <Calendar 
+          onChange={onChange} 
+          value={value} 
+          className="custom-calendar"
+          nextLabel={
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+            </svg>
+          }
+          prevLabel={
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
+          }
+          navigationLabel={({ date }) => (
+            <span className="font-medium">
+              {date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+            </span>
+          )}
+          tileClassName={({ date, view }) => {
+            // Add custom classes for today
+            if (
+              view === 'month' &&
+              date.getDate() === new Date().getDate() &&
+              date.getMonth() === new Date().getMonth() &&
+              date.getFullYear() === new Date().getFullYear()
+            ) {
+              return 'today-tile';
+            }
+            return null;
+          }}
+        />
+      </div>
     </div>
-    <div className='flex flex-col gap-4'>
-        {events.map(event=>(
-            <div className='p-5 rounded-md border-2 border-gray-100 border-t-4 odd:border-t-lamaSky even:border-t-lamaPurple' key={event.id}>
-             <div className='flex items-center justify-between'>
-                <h1 className='font-semibold text-gray-600'>{event.title}</h1>
-                <span className='text-gray-300 text-xs'>{event.time}</span>
-             </div>
-             <p className='mt-2 text-gray-400 text-sm'>{event.description}</p>
-            </div>
-        ))}
-    </div>
-    </div>
-  )
-}
+  );
+};
 
-export default EventCalender
+export default EventCalendar;

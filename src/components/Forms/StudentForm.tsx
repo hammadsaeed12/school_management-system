@@ -1,77 +1,209 @@
 "use client";
+
 import { zodResolver } from "@hookform/resolvers/zod";
-import React from "react";
-import Image from "next/image";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
 import InputField from "../InputField";
-const schema = z.object({
-  username: z
-    .string()
-    .min(3, { message: "Username must be atleast 3 character long!" })
-    .max(20, { message: "Username must be most 20 character long!" }),
-  email: z.string().email({ message: "Invalid email address!" }),
-  password: z
-    .string()
-    .min(8, { message: "Password must be atleast 8 characters long!" }),
-  firstName: z.string().min(1, { message: "First name is required!" }),
-  LastName: z.string().min(1, { message: "Last name is required!" }),
-  phone: z.string().min(1, { message: "Phone number required!" }),
-  address: z.string().min(1, { message: "Address is required!" }),
-  bloodType: z.string().min(1, { message: "bloodtype is required!" }),
-  birthday: z.date({ message: "Birthday date is required!" }),
-  gender: z.enum(["male", "female"], { message: "Gender is required!" }),
-  img: z.instanceof(File, { message: "Image is required!" }),
-});
-type Inputs = z.infer<typeof schema>;
+import Image from "next/image";
+import { Dispatch, SetStateAction, useEffect, useState, useTransition } from "react";
+import {
+  studentSchema,
+  StudentSchema,
+} from "@/lib/formValidationSchema";
+import {
+  createStudent,
+  updateStudent,
+} from "@/lib/actions";
+import { useRouter } from "next/navigation";
+import { toast } from "react-toastify";
+import { CldUploadWidget } from "next-cloudinary";
+import cloudinaryConfig from "@/lib/cloudinary-config";
+
+// Define the expected return type from the server actions
+interface ActionResult {
+  success: boolean;
+  error: boolean;
+  message?: string;
+}
+
 const StudentForm = ({
   type,
   data,
+  setOpen,
+  relatedData,
 }: {
   type: "create" | "update";
-  data: any;
+  data?: any;
+  setOpen: Dispatch<SetStateAction<boolean>>;
+  relatedData?: any;
 }) => {
+  // Extract classes from relatedData early to use in defaultValues
+  const { classes } = relatedData || {};
+  
+  // Format data for the form
+  const formattedData = data ? {
+    ...data,
+    birthday: data.birthday ? new Date(data.birthday) : undefined,
+    sex: data.sex || "MALE",
+    bloodType: data.bloodType || "",
+    address: data.address || "",
+    gradeId: data.gradeId ? Number(data.gradeId) : undefined,
+    classId: data.classId ? Number(data.classId) : undefined,
+  } : {
+    sex: "MALE",
+    bloodType: "",
+    address: "",
+  };
+  
+  console.log("Initial form data:", formattedData);
+  
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<Inputs>({
-    resolver: zodResolver(schema),
+    watch,
+  } = useForm<StudentSchema>({
+    resolver: zodResolver(studentSchema),
+    defaultValues: formattedData
   });
 
-  const onSubmit = handleSubmit((data) => {
-    console.log(data);
+  const [img, setImg] = useState<any>(data?.img ? { secure_url: data.img } : null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+  const [formSuccess, setFormSuccess] = useState(false);
+  
+  const router = useRouter();
+
+  const onSubmit = handleSubmit(async (formData) => {
+    setErrorMessage(null);
+    
+    // Log the form data for debugging
+    console.log("Form data being submitted:", formData);
+    
+    // Ensure all required fields are present
+    const requiredFields = ["username", "name", "surname", "birthday", "bloodType", "sex", "classId", "parentId"];
+    const missingFields = [];
+    
+    for (const field of requiredFields) {
+      if (!formData[field as keyof StudentSchema]) {
+        missingFields.push(field);
+      }
+    }
+    
+    // Add password validation for create
+    if (type === "create" && (!formData.password || formData.password === "")) {
+      missingFields.push("password");
+    }
+    
+    if (missingFields.length > 0) {
+      setErrorMessage(`Missing required fields: ${missingFields.join(', ')}`);
+      return;
+    }
+    
+    // Create a copy of the data for formatting
+    const formattedData = { ...formData };
+    
+    // Add the image if available
+    if (img?.secure_url) {
+      formattedData.img = img.secure_url;
+    }
+    
+    // Set default values for optional fields
+    formattedData.address = formattedData.address || "";
+    formattedData.bloodType = formattedData.bloodType || "";
+    formattedData.sex = formattedData.sex || "MALE";
+    
+    // Ensure numeric fields are numbers
+    if (formattedData.gradeId) {
+      formattedData.gradeId = Number(formattedData.gradeId);
+    }
+    
+    if (formattedData.classId) {
+      formattedData.classId = Number(formattedData.classId);
+    }
+    
+    // For update, make sure we have the ID
+    if (type === "update" && !formattedData.id && data?.id) {
+      formattedData.id = data.id;
+    } else if (type === "create" && formattedData.id) {
+      // For create, remove the ID field as it should be generated by the database
+      delete formattedData.id;
+      
+      // For create, make the username unique by adding a timestamp
+      formattedData.username = `${formattedData.username}_${Date.now()}`;
+      console.log("Generated unique username:", formattedData.username);
+    }
+    
+    console.log("Formatted data being sent to server:", formattedData);
+    
+    startTransition(async () => {
+      try {
+        let result: ActionResult;
+        if (type === "create") {
+          result = await createStudent({ success: false, error: false }, formattedData);
+        } else {
+          result = await updateStudent({ success: false, error: false }, formattedData);
+        }
+        
+        console.log("Action result:", result);
+        
+        if (result.success) {
+          toast(`Student has been ${type === "create" ? "created" : "updated"}!`);
+          setFormSuccess(true);
+          setOpen(false);
+          router.refresh();
+        } else {
+          setErrorMessage(result.message || "Something went wrong!");
+        }
+      } catch (error) {
+        console.error("Error submitting form:", error);
+        setErrorMessage("An unexpected error occurred");
+      }
+    });
   });
+
+  // For debugging - watch all form values
+  const allValues = watch();
+  console.log("Current form values:", allValues);
 
   return (
     <form className="flex flex-col gap-8" onSubmit={onSubmit}>
-      <h1 className="text-xl font-semibold">Create a new student</h1>
+      <h1 className="text-xl font-semibold">
+        {type === "create" ? "Create a new student" : "Update the student"}
+      </h1>
+      
+      {/* Hidden ID field for updates */}
+      {type === "update" && data?.id && (
+        <input type="hidden" {...register("id")} defaultValue={data.id} />
+      )}
+      
       <span className="text-xs text-gray-400 font-medium">
         Authentication Information
       </span>
       <div className="flex justify-between flex-wrap gap-4">
         <InputField
           label="Username"
-          register={register}
           name="username"
+          register={register}
           error={errors.username}
           defaultValue={data?.username}
+          required
         />
         <InputField
           label="Email"
-          register={register}
           name="email"
+          register={register}
           type="email"
           error={errors.email}
           defaultValue={data?.email}
         />
         <InputField
           label="Password"
-          register={register}
           name="password"
+          register={register}
           type="password"
           error={errors.password}
-          defaultValue={data?.password}
+          defaultValue=""
+          required={type === "create"}
         />
       </div>
 
@@ -81,83 +213,140 @@ const StudentForm = ({
       <div className="flex justify-between flex-wrap gap-4">
         <InputField
           label="Firstname"
+          name="name"
           register={register}
-          name="firstName"
-          error={errors.firstName}
-          defaultValue={data?.firstName}
+          error={errors.name}
+          defaultValue={data?.name}
+          required
         />
         <InputField
           label="Lastname"
+          name="surname"
           register={register}
-          name="LastName"
-          type="LastName"
-          error={errors.LastName}
-          defaultValue={data?.LastName}
+          error={errors.surname}
+          defaultValue={data?.surname}
+          required
         />
         <InputField
           label="Phone"
-          register={register}
           name="phone"
-          type="phone"
+          register={register}
           error={errors.phone}
           defaultValue={data?.phone}
         />
         <InputField
           label="Address"
-          register={register}
           name="address"
-          type="address"
+          register={register}
           error={errors.address}
           defaultValue={data?.address}
+          required
         />
         <InputField
           label="BloodType"
-          register={register}
           name="bloodType"
-          type="bloodType"
+          register={register}
           error={errors.bloodType}
           defaultValue={data?.bloodType}
+          required
         />
         <InputField
           label="Birthday"
-          register={register}
           name="birthday"
+          register={register}
           type="date"
           error={errors.birthday}
-          defaultValue={data?.birthday}
+          defaultValue={data?.birthday ? new Date(data.birthday).toISOString().split("T")[0] : undefined}
+          required
         />
-      <div className="flex flex-col gap-2 w-full md:w-1/4">
-        <label className="text-xs text-gray-500">Gender</label>
-        <select
-          className="ring-[1.5px] ring-gray-300  p-2 rounded-md text-sm w-full  border  bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-          {...register("gender")}
-          defaultValue={data?.gender}
+        <div className="flex flex-col gap-2 w-full md:w-1/4">
+          <label className="text-xs text-gray-500">Sex <span className="text-red-500">*</span></label>
+          <select
+            className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full border bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+            {...register("sex")}
+            defaultValue={data?.sex || "MALE"}
+            required
+          >
+            <option value="MALE">Male</option>
+            <option value="FEMALE">Female</option>
+          </select>
+          {errors.sex?.message && (
+            <p className="text-xs text-red-400">
+              {errors.sex.message.toString()}
+            </p>
+          )}
+        </div>
+        <InputField
+          label="Grade ID"
+          name="gradeId"
+          register={register}
+          error={errors.gradeId}
+          defaultValue={data?.gradeId?.toString() || ""}
+          type="number"
+          required
+        />
+        <div className="flex flex-col gap-2 w-full md:w-1/4">
+          <label className="text-xs text-gray-500">Class <span className="text-red-500">*</span></label>
+          <select
+            className="ring-[1.5px] ring-gray-300 p-2 rounded-md text-sm w-full border bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+            {...register("classId")}
+            defaultValue={data?.classId}
+            required
+          >
+            <option value="">Select a class</option>
+            {classes?.map((classItem: any) => (
+              <option value={classItem.id} key={classItem.id}>
+                {classItem.name}
+              </option>
+            ))}
+          </select>
+          {errors.classId?.message && (
+            <p className="text-xs text-red-400">
+              {errors.classId.message.toString()}
+            </p>
+          )}
+        </div>
+        <InputField
+          label="Parent ID"
+          name="parentId"
+          register={register}
+          error={errors.parentId}
+          defaultValue={data?.parentId || ""}
+          required
+        />
+
+        <CldUploadWidget
+          uploadPreset="school"
+          onSuccess={(result, { widget }) => {
+            setImg(result.info);
+            widget.close();
+          }}
+          options={{
+            cloudName: cloudinaryConfig.cloudName,
+            apiKey: cloudinaryConfig.apiKey,
+          }}
         >
-          <option value="male">Male</option>
-          <option value="female">Female</option>
-        </select>
-        {errors.gender?.message && (
-          <p className="text-xs text-red-400">
-            {errors.gender.message.toString()}
-          </p>
-        )}
+          {({ open }) => {
+            return (
+              <div
+                className="text-xs text-gray-500 flex items-center gap-2 cursor-pointer"
+                onClick={() => open()}
+              >
+                <Image src="/upload.png" alt="" width={28} height={28} />
+                <span>Upload a photo</span>
+              </div>
+            );
+          }}
+        </CldUploadWidget>
       </div>
-      <div className="flex flex-col gap-2 w-full md:w-1/4 justify-center">
-        <label className="text-xs text-gray-500 flex items-center gap-2 cursor-pointer"htmlFor="img">
-          <Image src="/upload.png" alt="" width={28} height={28}/>
-          <span>Upload a photo</span>
-        </label>
-        <input type="file" id="img" {...register("img")} className="hidden"/>
-        
-        {errors.img?.message && (
-          <p className="text-xs text-red-400">
-            {errors.img.message.toString()}
-          </p>
-        )}
-      </div>
-      </div>
-      <button className="bg-blue-400 text-white p-2 rounded-md">
-        {type === "create" ? "Create" : "Update"}
+      {errorMessage && (
+        <span className="text-red-500">{errorMessage}</span>
+      )}
+      <button 
+        className="bg-blue-400 text-white p-2 rounded-md disabled:bg-gray-300"
+        disabled={isPending}
+      >
+        {isPending ? "Processing..." : (type === "create" ? "Create" : "Update")}
       </button>
     </form>
   );
