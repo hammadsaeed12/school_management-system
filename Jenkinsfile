@@ -100,7 +100,7 @@ pipeline {
                         npx pm2 list | grep -w "${APP_NAME}"
 
                         # Check if the app is running
-                        if npx pm2 list | grep -qw "${APP_NAME}"
+                        if npx pm2 list | grep -w "${APP_NAME}"
                         then
                             echo "Application ${APP_NAME} is already running. Restarting it..."
                             npx pm2 restart "${APP_NAME}"
